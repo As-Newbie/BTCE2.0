@@ -2,6 +2,7 @@
 ![GitHub repo size](https://img.shields.io/github/repo-size/As-Newbie/learning-record?color=blue\&label=Repo%20Size)
 ![GitHub last commit](https://img.shields.io/github/last-commit/As-Newbie/learning-record?color=green\&label=Last%20Commit)
 ![Python](https://img.shields.io/badge/Python-Learning-blue?logo=python)
+
 一个自动监控B站动态置顶评论变化的Python程序，当检测到置顶评论更新时自动发送邮件通知。
 
 ## 功能特点
@@ -218,6 +219,7 @@ BROWSER_RESTART_INTERVAL = 10 # 重启间隔
 - 本项目适合有一定Python基础的用户使用
 - 复杂的定制化需求建议自行修改或寻求AI助手帮助
 - 不保证在所有环境下都能完美运行
+
 
 
 
