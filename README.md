@@ -36,6 +36,7 @@ playwright install chromium
 编辑 `config_email.py` 文件：**最好是两个不同的邮箱 没试过同一个邮箱**
 ```
 python
+
 发件邮箱配置
 EMAIL_USER = "your_email@qq.com" # 您的QQ邮箱
 EMAIL_PASSWORD = "your_smtp_password" # QQ邮箱SMTP授权码
@@ -71,6 +72,11 @@ DYNAMIC_URLS = [
 python get_cookies.py
 ```
 按提示扫码登录B站，登录成功后会自动保存cookies。
+**隐私安全说明**：
+- Cookie文件仅保存在您的本地电脑，不会被传输到任何服务器
+- 项目作者无法获取您的登录信息
+- Cookie包含您的B站身份凭证，请妥善保管，不要分享给他人
+- 如需彻底删除登录信息，直接删除项目目录下的`cookies.json`文件即可
 
 ### 7. 运行监控程序
 ```bash
@@ -210,4 +216,5 @@ BROWSER_RESTART_INTERVAL = 10 # 重启间隔
 - 本项目适合有一定Python基础的用户使用
 - 复杂的定制化需求建议自行修改或寻求AI助手帮助
 - 不保证在所有环境下都能完美运行
+
 
