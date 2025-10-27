@@ -1,6 +1,6 @@
 import asyncio
 import json
-import time  # 确保导入 time
+import time  
 import os
 from pathlib import Path
 from playwright.async_api import async_playwright
@@ -265,4 +265,5 @@ class Monitor:
             if 'perf_task' in locals():
                 perf_task.cancel()
             await self.safe_close_browser()
+
             logger.info("✅ 监控程序已安全退出")
