@@ -29,8 +29,8 @@
 
 ### 1. 克隆项目
 ```bash
-git clone <项目地址>
-cd bili-dynamic-monitor
+git clone https://github.com/X-tong2568/BTCE2.0
+cd BTCE2.0
 ```
 ### 2. 安装依赖
 ```bash
@@ -225,6 +225,7 @@ BROWSER_RESTART_INTERVAL = 10 # 重启间隔
 - 本项目适合有一定Python基础的用户使用
 - 复杂的定制化需求建议自行修改或寻求AI助手帮助
 - 不保证在所有环境下都能完美运行
+
 
 
 
