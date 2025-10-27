@@ -3,9 +3,7 @@
 ![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)
 ![Dependencies](https://img.shields.io/badge/dependencies-playwright%20%7C%20beautifulsoup4-orange)
 ![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macOS-lightgrey)
-![GitHub last commit](https://img.shields.io/github/last-commit/用户名/仓库名)
-![GitHub issues](https://img.shields.io/github/issues/用户名/仓库名)
-![GitLicense](https://img.shields.io/github/license/用户名/仓库名)
+
 
 一个自动监控B站动态置顶评论变化的Python程序，当检测到置顶评论更新时自动发送邮件通知。
 
@@ -223,6 +221,7 @@ BROWSER_RESTART_INTERVAL = 10 # 重启间隔
 - 本项目适合有一定Python基础的用户使用
 - 复杂的定制化需求建议自行修改或寻求AI助手帮助
 - 不保证在所有环境下都能完美运行
+
 
 
 
