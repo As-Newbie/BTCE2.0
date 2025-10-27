@@ -54,6 +54,7 @@ TO_EMAILS = [
 编辑 `dynamic.py` 文件，添加要监控的动态链接：
 ```
 python
+
 DYNAMIC_URLS = [
 "https://t.bilibili.com/动态ID1",
 "https://t.bilibili.com/动态ID2",
@@ -106,6 +107,7 @@ bili-dynamic-monitor/
 ### 主要配置项（config.py）
 ```
 python
+
 UP_NAME = "user name" # UP主名字（仅用于邮件标题）
 CHECK_INTERVAL = 3 # 检查间隔（秒）
 ```
@@ -166,6 +168,7 @@ python main.py
 程序会自动重启浏览器释放内存，可在config.py中调整：
 ```
 python
+
 MEMORY_THRESHOLD_MB = 500 # 内存阈值
 BROWSER_RESTART_INTERVAL = 10 # 重启间隔
 ```
@@ -207,3 +210,4 @@ BROWSER_RESTART_INTERVAL = 10 # 重启间隔
 - 本项目适合有一定Python基础的用户使用
 - 复杂的定制化需求建议自行修改或寻求AI助手帮助
 - 不保证在所有环境下都能完美运行
+
