@@ -14,7 +14,7 @@ class HealthChecker:
         self.start_time = time.time()
         self.success_count = 0
         self.failure_count = 0
-        self.last_health_check = time.time()
+        self.last_health_check = time.time()  # 初始化时间戳
 
     async def check_memory_usage(self):
         """检查内存使用情况"""
@@ -29,6 +29,9 @@ class HealthChecker:
     async def check_browser_health(self, page):
         """检查浏览器健康状态"""
         try:
+            # 更新检查时间戳
+            self.last_health_check = time.time()
+
             # 设置页面超时
             page.set_default_timeout(15000)
 
@@ -47,24 +50,30 @@ class HealthChecker:
             return True
 
         except asyncio.TimeoutError:
-            logger.error("❌ 浏览器健康检查超时")
+            logger.error("❌❌ 浏览器健康检查超时")
             return False
         except Exception as e:
-            logger.error(f"❌ 浏览器健康检查失败: {e}")
+            logger.error(f"❌❌ 浏览器健康检查失败: {e}")
             return False
 
     async def check_network_connectivity(self):
         """检查网络连通性"""
         try:
+            # 更新检查时间戳
+            self.last_health_check = time.time()
+
             # 这里可以添加ping测试或其他网络检查
             return True
         except Exception as e:
-            logger.error(f"❌ 网络连通性检查失败: {e}")
+            logger.error(f"❌❌ 网络连通性检查失败: {e}")
             return False
 
     @async_retry(NETWORK_RETRY_CONFIG)
     async def comprehensive_check(self, page):
         """综合健康检查"""
+        # 更新检查时间戳
+        self.last_health_check = time.time()
+
         checks = [
             self.check_memory_usage(),
             self.check_browser_health(page),
