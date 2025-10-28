@@ -79,14 +79,12 @@ class CommentRenderer:
 
                         # 备用方法：尝试直接获取图片元素
                         try:
-                            # 使用 CSS 选择器获取图片
                             img_elements = await pics_renderer.query_selector_all('img')
                             for img in img_elements:
                                 src = await img.get_attribute('src')
                                 if src:
                                     if src.startswith('//'):
                                         src = 'https:' + src
-                                    # 移除图片参数，获取原始图片
                                     if '@' in src:
                                         src = src.split('@')[0]
                                     if src not in comment_images:
@@ -131,7 +129,7 @@ class CommentRenderer:
             if current_time is None:
                 current_time = time.strftime('%Y-%m-%d %H:%M:%S')
 
-            # 使用正确的 CSS 字符串格式
+            # 邮件主体（新置顶评论部分）
             email_body = f"""
             <html>
               <head>
@@ -154,6 +152,8 @@ class CommentRenderer:
                     border: 1px solid #ddd;
                     padding: 15px;
                     border-radius: 5px;
+                    white-space: pre-wrap;
+                    word-break: break-all;
                   }}
                   .current-comment {{
                     background-color: #f0fff0;
@@ -193,14 +193,15 @@ class CommentRenderer:
                   </div>
             """
 
-            # 插入最新置顶评论的图片
+            # 插入最新置顶评论图片
             if current_images:
                 email_body += '<div class="images-container">'
                 for img_url in current_images:
                     email_body += f'<img class="image-item" src="{img_url}" alt="评论图片">'
                 email_body += '</div>'
 
-            email_body += """
+            # 原置顶评论部分（修复 f-string）
+            email_body += f"""
                 </div>
 
                 <div class="comment-section">
@@ -210,7 +211,7 @@ class CommentRenderer:
                   </div>
             """
 
-            # 插入原置顶评论的图片
+            # 插入原置顶评论图片
             if last_images:
                 email_body += '<div class="images-container">'
                 for img_url in last_images:
