@@ -1,6 +1,6 @@
 import asyncio
 import json
-import time  
+import time  # 确保导入 time
 import os
 from pathlib import Path
 from playwright.async_api import async_playwright
@@ -198,7 +198,10 @@ class Monitor:
 
     async def run_monitoring_cycle(self):
         """执行一次完整的监控循环"""
-        logger.info(f"🔍 第 {self.loop_count} 轮检查开始")
+        logger.info(f"🔍🔍 第 {self.loop_count} 轮检查开始")
+
+        # 更新检查时间戳
+        self.health_checker.last_health_check = time.time()
 
         # 检查是否需要重启浏览器
         await self.restart_browser_if_needed()
@@ -220,7 +223,7 @@ class Monitor:
 
         # 记录统计信息
         stats = self.health_checker.get_stats()
-        logger.info(f"📊 本轮检查完成 - {stats}")
+        logger.info(f"📊📊 本轮检查完成 - {stats}")
 
     async def run(self):
         """运行监控主循环"""
@@ -265,5 +268,4 @@ class Monitor:
             if 'perf_task' in locals():
                 perf_task.cancel()
             await self.safe_close_browser()
-
             logger.info("✅ 监控程序已安全退出")
