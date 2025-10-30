@@ -132,12 +132,12 @@ UP_NAME = "user name" # UP主名字（仅用于邮件标题）
 CHECK_INTERVAL = 3 # 检查间隔（秒）
 
 # ===== 监控配置 =====
-BROWSER_RESTART_INTERVAL = 100  # 每10次循环重启浏览器
+BROWSER_RESTART_INTERVAL = 100  # 每100次循环重启浏览器
 HEALTH_CHECK_INTERVAL = 10  # 每5次循环进行健康检查
 TASK_TIMEOUT = 30  # 单个任务超时时间(秒)
 # 状态监控配置
 STATUS_MONITOR_INTERVAL = 3600  # 状态检查间隔（秒），1小时
-NO_UPDATE_ALERT_HOURS = 1      # 无更新提醒阈值（小时）
+NO_UPDATE_ALERT_HOURS = 22      # 无更新提醒阈值（小时）
 
 # ===== 性能监控配置 =====
 MEMORY_THRESHOLD_MB = 500  # 内存阈值(MB)
@@ -257,6 +257,7 @@ BROWSER_RESTART_INTERVAL = 10 # 重启间隔
 - 请合理设置检查频率，避免对B站服务器造成过大压力
 - 请妥善保管个人Cookie和邮箱授权码，不要泄露给他人
 - 本项目完全非原创且主要依赖AI辅助开发，技术支持和维护有限
+
 
 
 
