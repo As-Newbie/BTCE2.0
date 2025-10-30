@@ -112,6 +112,7 @@ bili-dynamic-monitor/
 ├── health_check.py # 健康检查
 ├── logger_config.py # 日志配置
 ├── performance_monitor.py # 性能监控
+├── status_monitor.py #状态监控
 ├── retry_decorator.py # 重试装饰器
 ├── task_executor.py # 任务执行器
 ├── logs/ # 日志目录（自动生成）
@@ -243,6 +244,7 @@ BROWSER_RESTART_INTERVAL = 10 # 重启间隔
 - 请合理设置检查频率，避免对B站服务器造成过大压力
 - 请妥善保管个人Cookie和邮箱授权码，不要泄露给他人
 - 本项目完全非原创且主要依赖AI辅助开发，技术支持和维护有限
+
 
 
 
