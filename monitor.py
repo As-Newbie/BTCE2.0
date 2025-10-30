@@ -1,3 +1,4 @@
+# monitor
 import asyncio
 import json
 import time
@@ -28,7 +29,7 @@ class Monitor:
         self.cookie_file = COOKIE_FILE
         self.history_file = HISTORY_FILE
         self.mail_save_dir = MAIL_SAVE_DIR
-
+        self.status_monitor = None  # 状态监控器实例
         self.comment_renderer = CommentRenderer()
         self.health_checker = HealthChecker()
 
@@ -148,6 +149,9 @@ class Monitor:
             if last_text and current_text != last_text:
                 logger.info(f"🔔 动态 {dynamic_id} 置顶评论文字变化")
                 await self._send_notification(dynamic_id, current_html, current_images, last_html, last_images)
+                # 记录变化到状态监控器
+                if self.status_monitor:
+                    self.status_monitor.record_change()
 
             # 更新历史记录
             self.history_data[dynamic_id] = {"html": current_html, "images": current_images}
@@ -198,7 +202,8 @@ class Monitor:
 
     async def run_monitoring_cycle(self):
         """执行一次完整监控循环"""
-        logger.info(f"🔍 第 {self.loop_count} 轮检查开始")
+        # 这里修改了
+        logger.info(f"🔍 第 {self.loop_count+1} 轮检查开始")
         self.health_checker.last_health_check = time.time()
 
         await self.restart_browser_if_needed()
@@ -208,8 +213,13 @@ class Monitor:
         await asyncio.gather(*tasks, return_exceptions=True)
 
         self._save_history()
-        stats = self.health_checker.get_stats()
+        # 将 loop_count 作为参数传入
+        stats = self.health_checker.get_stats(total_loops=self.loop_count)
         logger.info(f"📊 本轮检查完成 - {stats}")
+        # 记录状态信息到日志
+        if self.status_monitor:
+            status_info = self.status_monitor.get_status_info()
+            logger.info(f"📈 状态监控: {status_info}")
 
     async def run(self):
         """运行监控主循环"""
