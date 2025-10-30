@@ -11,6 +11,7 @@ class HealthChecker:
     """增强的健康检查类"""
 
     def __init__(self):
+        self.loop_count = None
         self.start_time = time.time()
         self.success_count = 0
         self.failure_count = 0
@@ -31,7 +32,7 @@ class HealthChecker:
         try:
             # 更新检查时间戳
             self.last_health_check = time.time()
-
+            
             # 设置页面超时
             page.set_default_timeout(15000)
 
@@ -61,7 +62,7 @@ class HealthChecker:
         try:
             # 更新检查时间戳
             self.last_health_check = time.time()
-
+            
             # 这里可以添加ping测试或其他网络检查
             return True
         except Exception as e:
@@ -73,7 +74,7 @@ class HealthChecker:
         """综合健康检查"""
         # 更新检查时间戳
         self.last_health_check = time.time()
-
+        
         checks = [
             self.check_memory_usage(),
             self.check_browser_health(page),
@@ -107,16 +108,20 @@ class HealthChecker:
         """增加失败计数"""
         self.failure_count += 1
 
-    def get_stats(self):
+    def get_stats(self, total_loops=None):
         """获取统计信息"""
-        total = self.success_count + self.failure_count
+        """获取统计信息
+            Args:
+                total_loops: 外部传入的总循环次数，如果为None则使用内部计算
+        """
+        total = total_loops if total_loops is not None else (self.success_count + self.failure_count)
         success_rate = (self.success_count / total * 100) if total > 0 else 0
 
         return {
-            "uptime": self.get_uptime(),
-            "total_checks": total,
-            "success_count": self.success_count,
-            "failure_count": self.failure_count,
-            "success_rate": f"{success_rate:.1f}%",
+            "运行时间": self.get_uptime(),
+            "抓取次数": total,
+            "抓取成功次数": self.success_count,
+            "抓取失败次数": total-self.success_count,
+            "抓取成功率": f"{success_rate:.1f}%",
             "last_check": datetime.fromtimestamp(self.last_health_check).strftime('%H:%M:%S')
         }
