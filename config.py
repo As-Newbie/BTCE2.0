@@ -52,9 +52,10 @@ HEALTH_CHECK_INTERVAL = 10  # 每10次循环进行健康检查
 TASK_TIMEOUT = 30  # 单个任务超时时间(秒)
 # 状态监控配置
 STATUS_MONITOR_INTERVAL = 3600  # 状态检查间隔（秒），1小时
-NO_UPDATE_ALERT_HOURS = 1      # 无更新提醒阈值（小时）
+NO_UPDATE_ALERT_HOURS = 22      # 无更新提醒阈值（小时）
 
 # ===== 性能监控配置 =====
 MEMORY_THRESHOLD_MB = 500  # 内存阈值(MB)
 MAX_LOG_SIZE_MB = 10  # 单个日志文件最大大小(MB)
 LOG_BACKUP_COUNT = 5  # 保留的日志备份数量
+
