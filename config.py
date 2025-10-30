@@ -11,13 +11,13 @@ except ImportError:
     print("⚠️ 警告: 无法从 dynamic.py 导入 DYNAMIC_URLS，使用空列表")
 
 # ===== 基础配置 =====
-UP_NAME = "User name"  # 修改为您要监控的UP主名字
+UP_NAME = "星瞳"
 CHECK_INTERVAL = 3  # 秒
 MAX_RETRY_ATTEMPTS = 3
 RETRY_DELAY = 5  # 秒
 
 # ===== 文件路径配置 =====
-# 使用相对路径，项目根目录
+# 修改：使用当前文件所在目录作为基础目录
 BASE_DIR = Path(__file__).parent
 
 COOKIE_FILE = BASE_DIR / "cookies.json"
@@ -47,9 +47,12 @@ BROWSER_CONFIG = {
 }
 
 # ===== 监控配置 =====
-BROWSER_RESTART_INTERVAL = 10  # 每10次循环重启浏览器
-HEALTH_CHECK_INTERVAL = 5  # 每5次循环进行健康检查
+BROWSER_RESTART_INTERVAL = 100  # 每100次循环重启浏览器
+HEALTH_CHECK_INTERVAL = 10  # 每10次循环进行健康检查
 TASK_TIMEOUT = 30  # 单个任务超时时间(秒)
+# 状态监控配置
+STATUS_MONITOR_INTERVAL = 3600  # 状态检查间隔（秒），1小时
+NO_UPDATE_ALERT_HOURS = 1      # 无更新提醒阈值（小时）
 
 # ===== 性能监控配置 =====
 MEMORY_THRESHOLD_MB = 500  # 内存阈值(MB)
