@@ -3,6 +3,7 @@
 ![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)
 ![Dependencies](https://img.shields.io/badge/dependencies-playwright%20%7C%20beautifulsoup4-orange)
 ![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macOS-lightgrey)
+![License](https://img.shields.io/badge/license-MIT-green)
 ![Python](https://img.shields.io/badge/Python-Learning-blue?logo=python)
 
 
@@ -229,7 +230,20 @@ BROWSER_RESTART_INTERVAL = 10 # 重启间隔
 - 本项目适合有一定Python基础的用户使用
 - 复杂的定制化需求建议自行修改或寻求AI助手帮助
 - 不保证在所有环境下都能完美运行
-  
+
+## 许可证
+
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+
+## 免责声明
+
+本项目仅供学习和研究使用，请遵守相关法律法规和B站用户协议。使用者应对自己的行为负责，作者不承担任何法律责任。
+
+**重要提醒**：
+- 请合理设置检查频率，避免对B站服务器造成过大压力
+- 请妥善保管个人Cookie和邮箱授权码，不要泄露给他人
+- 本项目完全非原创且主要依赖AI辅助开发，技术支持和维护有限
+
 
 
 
