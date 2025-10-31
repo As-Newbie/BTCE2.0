@@ -12,7 +12,8 @@ except ImportError:
 
 # ===== 基础配置 =====
 UP_NAME = "星瞳"
-CHECK_INTERVAL = 3  # 秒
+CHECK_INTERVAL = 8.5  # 秒
+# 服务器检查一轮时间大概是6.9s CHECK_INTERVAL最好大于检查一轮的时间
 MAX_RETRY_ATTEMPTS = 3
 RETRY_DELAY = 5  # 秒
 
@@ -58,4 +59,5 @@ NO_UPDATE_ALERT_HOURS = 22      # 无更新提醒阈值（小时）
 MEMORY_THRESHOLD_MB = 500  # 内存阈值(MB)
 MAX_LOG_SIZE_MB = 10  # 单个日志文件最大大小(MB)
 LOG_BACKUP_COUNT = 5  # 保留的日志备份数量
+
 
