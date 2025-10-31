@@ -226,26 +226,33 @@ class Monitor:
         logger.info(f"=== {UP_NAME} 动态置顶评论监控启动 ===")
         logger.info(f"监控邮箱：{', '.join(TO_EMAILS)}")
         logger.info(f"检查间隔：{self.check_interval} 秒")
-        for url in DYNAMIC_URLS:
-            logger.info(f" - {url}")
 
         try:
             await self.initialize_browser()
             perf_task = asyncio.create_task(performance_monitor.periodic_report(interval_minutes=60))
 
             while self.is_running:
+                cycle_start = time.time()
                 try:
                     await self.run_monitoring_cycle()
-                    next_check = time.strftime("%H:%M:%S", time.localtime(time.time() + self.check_interval))
-                    logger.info(f"⏰ 下次检查时间: {next_check}")
-                    await asyncio.sleep(self.check_interval)
+
+                    # 计算需要等待的时间，确保精确间隔
+                    elapsed = time.time() - cycle_start
+                    wait_time = max(0, self.check_interval - elapsed)
+
+                    if wait_time > 0:
+                        next_check = time.strftime("%H:%M:%S", time.localtime(time.time() + wait_time))
+                        logger.info(f"⏰ 下次检查时间: {next_check} (等待{wait_time:.1f}秒)")
+                        await asyncio.sleep(wait_time)
+                    else:
+                        logger.warning(f"⏱️ 检查耗时({elapsed:.1f}秒)超过间隔，立即开始下一轮")
+
                 except KeyboardInterrupt:
                     logger.info("⛔ 收到中断信号，准备退出...")
                     break
                 except Exception as e:
                     logger.error(f"❌ 监控循环出错: {e}")
-                    logger.info("🔄 5秒后重试...")
-                    await asyncio.sleep(5)
+                    await asyncio.sleep(5)  # 出错时等待5秒
 
         except Exception as e:
             logger.error(f"❌ 监控程序严重错误: {e}")
