@@ -45,7 +45,11 @@ TO_EMAILS = [
     # 可继续添加更多收件人
     # "receiver3@example.com",
 ]
-
+# 状态监控管理员邮箱（单独接收状态提醒）
+STATUS_MONITOR_EMAILS = [
+    "admin@example.com",  # 使用发件人邮箱作为管理员邮箱，或者添加其他邮箱
+    # "another_admin@example.com",  # 可以添加更多管理员邮箱
+]
 """
 使用说明：
 1. 修改 SMTP_SERVER 和 SMTP_PORT
@@ -66,5 +70,6 @@ TO_EMAILS = [
 1. 请勿将此文件提交到公开的代码仓库
 2. 授权码应妥善保管，避免泄露
 3. 建议定期更新授权码
+
 
 
