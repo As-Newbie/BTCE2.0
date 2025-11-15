@@ -14,7 +14,7 @@ from config import (
 )
 from render_comment import CommentRenderer
 from email_utils import send_email
-from config_email import TO_EMAILS
+from config_email import TO_EMAILS,STATUS_MONITOR_EMAILS,EMAIL_USER
 from health_check import HealthChecker
 from logger_config import logger
 from retry_decorator import BROWSER_RETRY_CONFIG, async_retry
@@ -29,7 +29,7 @@ class Monitor:
         self.cookie_file = COOKIE_FILE
         self.history_file = HISTORY_FILE
         self.mail_save_dir = MAIL_SAVE_DIR
-        self.status_monitor = None  # 状态监控器实例
+        self.status_monitor = None  
         self.comment_renderer = CommentRenderer()
         self.health_checker = HealthChecker()
 
@@ -179,7 +179,7 @@ class Monitor:
 
             success = await asyncio.to_thread(
                 send_email,
-                subject=f"【{UP_NAME}动态监控】置顶评论已更新",
+                subject=f"【{UP_NAME}动态监控】更新啦！",
                 content=email_body
             )
             if success:
@@ -202,7 +202,6 @@ class Monitor:
 
     async def run_monitoring_cycle(self):
         """执行一次完整监控循环"""
-        # 这里修改了
         logger.info(f"🔍 第 {self.loop_count+1} 轮检查开始")
         self.health_checker.last_health_check = time.time()
 
@@ -224,7 +223,10 @@ class Monitor:
     async def run(self):
         """运行监控主循环"""
         logger.info(f"=== {UP_NAME} 动态置顶评论监控启动 ===")
-        logger.info(f"监控邮箱：{', '.join(TO_EMAILS)}")
+        logger.info(f"动态地址：{', '.join(DYNAMIC_URLS)}")
+        logger.info(f"监控发件邮箱：{EMAIL_USER}")  
+        logger.info(f"监控收件邮箱：{', '.join(TO_EMAILS)}")
+        logger.info(f"状态提醒邮箱：{', '.join(STATUS_MONITOR_EMAILS)}")
         logger.info(f"检查间隔：{self.check_interval} 秒")
 
         try:
