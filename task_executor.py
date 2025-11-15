@@ -62,5 +62,4 @@ class TaskExecutor:
             else:
                 successful_results.append(result)
 
-
         return successful_results
