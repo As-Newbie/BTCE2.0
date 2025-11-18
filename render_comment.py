@@ -75,7 +75,7 @@ class CommentRenderer:
                         )
                         comment_images.extend(img_src_list)
                     except Exception as e:
-                        logger.error(f"❌ 通过shadow DOM获取图片失败: {e}")
+                        logger.error(f"❌❌ 通过shadow DOM获取图片失败: {e}")
 
                         # 备用方法：尝试直接获取图片元素
                         try:
@@ -90,7 +90,7 @@ class CommentRenderer:
                                     if src not in comment_images:
                                         comment_images.append(src)
                         except Exception as e2:
-                            logger.error(f"❌ 直接获取图片元素失败: {e2}")
+                            logger.error(f"❌❌ 直接获取图片元素失败: {e2}")
 
                 break
 
@@ -109,18 +109,18 @@ class CommentRenderer:
 
             # 检测文字变化
             if last_text and current_text != last_text:
-                logger.info("🔔 检测到置顶评论文字变化！")
+                logger.info("🔔🔔 检测到置顶评论文字变化！")
                 return True
 
             # 检测图片变化
             if set(current_images) != set(last_images):
-                logger.info("🔔 检测到置顶评论图片变化！")
+                logger.info("🔔🔔 检测到置顶评论图片变化！")
                 return True
 
             return False
 
         except Exception as e:
-            logger.error(f"❌ 检测评论变化失败: {e}")
+            logger.error(f"❌❌ 检测评论变化失败: {e}")
             return False
 
     def render_email_content(self, dynamic_id, current_html, current_images, last_html, last_images, current_time=None):
@@ -170,6 +170,7 @@ class CommentRenderer:
                   .image-item {{
                     max-width: 300px;
                     max-height: 300px;
+                    object-fit: contain;
                   }}
                 </style>
               </head>
@@ -193,29 +194,29 @@ class CommentRenderer:
                   </div>
             """
 
-            # 插入最新置顶评论图片
+            # 修复：正确插入最新置顶评论图片
             if current_images:
                 email_body += '<div class="images-container">'
                 for img_url in current_images:
-                    email_body += f'<img class="image-item" src="{img_url}" alt="评论图片">'
+                    email_body += f'<img class="image-item" src="{img_url}" alt="评论图片" style="max-width: 100%; height: auto;">'
                 email_body += '</div>'
 
-            # 原置顶评论部分（修复 f-string）
+            # 原置顶评论部分
             email_body += f"""
                 </div>
 
                 <div class="comment-section">
                   <p class="comment-title">原置顶评论：</p>
                   <div class="comment-content previous-comment">
-                    {last_html}
+                    {last_html if last_html else "无原置顶评论"}
                   </div>
             """
 
-            # 插入原置顶评论图片
+            # 修复：正确插入原置顶评论图片
             if last_images:
                 email_body += '<div class="images-container">'
                 for img_url in last_images:
-                    email_body += f'<img class="image-item" src="{img_url}" alt="原评论图片">'
+                    email_body += f'<img class="image-item" src="{img_url}" alt="原评论图片" style="max-width: 100%; height: auto;">'
                 email_body += '</div>'
 
             email_body += """
@@ -227,5 +228,39 @@ class CommentRenderer:
             return email_body
 
         except Exception as e:
-            logger.error(f"❌ 渲染邮件内容失败: {e}")
+            logger.error(f"❌❌ 渲染邮件内容失败: {e}")
             return f"<html><body><h1>渲染邮件内容出错: {e}</h1></body></html>"
+
+    def generate_qq_message(self, up_name: str, dynamic_id: str, current_html: str, current_time: str) -> str:
+        """生成QQ群推送消息（纯文本，表情转为alt文字）"""
+        try:
+            # 使用BeautifulSoup处理HTML，将表情图片替换为alt文字
+            soup = BeautifulSoup(current_html, "html.parser")
+
+            # 找到所有表情图片，替换为alt属性中的文字[7](@ref)
+            for img in soup.find_all("img"):
+                alt_text = img.get("alt", "")
+                if alt_text:
+                    # 用alt文字替换图片[7](@ref)
+                    img.replace_with(alt_text)
+                else:
+                    # 如果没有alt属性，移除图片
+                    img.decompose()
+
+            # 提取纯文本内容
+            text_content = soup.get_text(strip=True)
+
+            # 生成QQ消息
+            qq_message = f"【{up_name}】瞳瞳空间更新啦~\n"
+            qq_message += f"\n{text_content}\n"
+            qq_message += "----------------"
+            qq_message += f"📅 检测时间: {current_time}\n"
+            qq_message += f"🔗 监测动态: https://t.bilibili.com/{dynamic_id}\n"
+            qq_message += "----------------"
+            
+
+            return qq_message
+
+        except Exception as e:
+            logger.error(f"❌❌ 生成QQ消息失败: {e}")
+            return f"【{up_name}】置顶评论更新通知\n动态: {dynamic_id}\n时间: {current_time}\n（内容解析失败，请查看邮件详情）"
