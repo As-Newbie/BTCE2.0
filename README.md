@@ -41,9 +41,9 @@ pip install -r requirements.txt
 ```bash
 playwright install chromium
 ```
-### 4. 配置邮箱（重要！）
+### 4. 配置邮箱和QQ（重要！）
 
-编辑 `config_email.py` 文件：**最好是两个不同的邮箱 没试过同一个邮箱**
+编辑 `config_email.py` 文件：
 ```
 python
 
@@ -61,6 +61,26 @@ TO_EMAILS = [
 3. 生成授权码
 
 **其他邮箱请参阅`config_email.py` 文件**
+
+QQ配置：
+
+1. 修改 QQ_BOT_API_URL
+   - 根据您的QQ机器人实际部署地址修改
+   - 默认使用Go-CQHTTP的默认端口5700
+
+2. 设置QQ群号
+   - 在 QQ_GROUP_IDS 列表中添加要推送的QQ群号
+   - 每个群号用字符串形式表示
+
+3. 配置访问令牌（如果需要）
+   - 如果您的QQ机器人设置了访问令牌，请填写QQ_BOT_ACCESS_TOKEN
+
+4. 保存文件后重启监控程序使配置生效
+
+重要提示：
+1. 请确保QQ机器人服务正常运行
+2. 确保监控程序可以访问QQ机器人API地址
+
 
 ### 5. 配置监控目标
 
@@ -256,6 +276,7 @@ BROWSER_RESTART_INTERVAL = 10 # 重启间隔
 - 请合理设置检查频率，避免对B站服务器造成过大压力
 - 请妥善保管个人Cookie和邮箱授权码，不要泄露给他人
 - 本项目完全非原创且主要依赖AI辅助开发，技术支持和维护有限
+
 
 
 
