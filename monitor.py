@@ -1,4 +1,4 @@
-# monitor
+# monitor.py
 import asyncio
 import json
 import time
@@ -19,6 +19,8 @@ from health_check import HealthChecker
 from logger_config import logger
 from retry_decorator import BROWSER_RETRY_CONFIG, async_retry
 from performance_monitor import performance_monitor
+from qq_utils import send_qq_message  # 新增导入
+from config_qq import QQ_GROUP_IDS # 新增导入
 
 
 class Monitor:
@@ -29,21 +31,40 @@ class Monitor:
         self.cookie_file = COOKIE_FILE
         self.history_file = HISTORY_FILE
         self.mail_save_dir = MAIL_SAVE_DIR
-        self.status_monitor = None  
+        self.status_monitor = None  # 状态监控器实例
         self.comment_renderer = CommentRenderer()
         self.health_checker = HealthChecker()
 
         self.loop_count = 0
         self.is_running = True
 
+        # 修改：按照UP_NAME存储历史记录，而不是动态ID
         if os.path.exists(self.history_file):
             self.history_data = json.loads(Path(self.history_file).read_text(encoding="utf-8"))
+            # 兼容旧格式：如果存在动态ID格式的数据，转换为UP_NAME格式
+            self._migrate_old_history_format()
         else:
             self.history_data = {}
 
         self.playwright = None
         self.browser = None
         self.context = None
+
+    def _migrate_old_history_format(self):
+        """迁移旧的历史记录格式（动态ID为键 -> UP_NAME为键）"""
+        # 检查是否包含动态ID格式的键（长的数字字符串）
+        dynamic_id_keys = [key for key in self.history_data.keys() if key.isdigit() and len(key) > 10]
+
+        if dynamic_id_keys and UP_NAME not in self.history_data:
+            # 使用第一个动态ID的数据作为初始UP_NAME数据
+            first_dynamic_id = dynamic_id_keys[0]
+            self.history_data[UP_NAME] = self.history_data[first_dynamic_id]
+            logger.info(f"✅ 已迁移历史记录格式: {first_dynamic_id} -> {UP_NAME}")
+
+            # 清理旧的动态ID数据
+            for dynamic_id in dynamic_id_keys:
+                if dynamic_id in self.history_data:
+                    del self.history_data[dynamic_id]
 
     @async_retry(BROWSER_RETRY_CONFIG)
     async def initialize_browser(self):
@@ -87,7 +108,8 @@ class Monitor:
             restart_needed = True
         elif self.loop_count % HEALTH_CHECK_INTERVAL == 0:
             logger.info("🔍 执行健康检查...")
-            if self.context and self.browser and not await self.health_checker.comprehensive_check(await self.context.new_page()):
+            if self.context and self.browser and not await self.health_checker.comprehensive_check(
+                    await self.context.new_page()):
                 logger.warning("⚠️ 健康检查失败，准备重启浏览器")
                 restart_needed = True
 
@@ -104,8 +126,8 @@ class Monitor:
         """去除 HTML 中表情图片，保留文字"""
         if not html_text:
             return ""
-        cleaned = re.sub(r'<img[^>]+class="[^"]*emoji[^"]*"[^>]*>', '', html_text, flags=re.IGNORECASE)
-        cleaned = re.sub(r'<img[^>]+alt="[^"]*"[^>]*>', '', cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r']+class="[^"]*emoji[^"]*"[^>]*>', '', html_text, flags=re.IGNORECASE)
+        cleaned = re.sub(r']+alt="[^"]*"[^>]*>', '', cleaned, flags=re.IGNORECASE)
         return cleaned
 
     async def check_dynamic_changes(self, dynamic_id):
@@ -132,7 +154,8 @@ class Monitor:
                 logger.warning(f"⚠️ 动态 {dynamic_id} 未找到置顶评论")
                 return
 
-            last_record = self.history_data.get(dynamic_id, {"html": "", "images": []})
+            # 修改：使用UP_NAME作为键，而不是dynamic_id
+            last_record = self.history_data.get(UP_NAME, {"html": "", "images": []})
             last_html = last_record.get("html", "")
             last_images = last_record.get("images", [])
 
@@ -146,15 +169,15 @@ class Monitor:
             logger.info(f"📜 上次文本: {last_text if last_text else '无'}")
 
             # 仅文字变化触发通知
-            if last_text and current_text != last_text:
+            if not last_text or current_text != last_text:
                 logger.info(f"🔔 动态 {dynamic_id} 置顶评论文字变化")
                 await self._send_notification(dynamic_id, current_html, current_images, last_html, last_images)
                 # 记录变化到状态监控器
                 if self.status_monitor:
                     self.status_monitor.record_change()
 
-            # 更新历史记录
-            self.history_data[dynamic_id] = {"html": current_html, "images": current_images}
+            # 修改：使用UP_NAME更新历史记录
+            self.history_data[UP_NAME] = {"html": current_html, "images": current_images}
             self.health_checker.increment_success()
 
         except Exception as e:
@@ -162,7 +185,7 @@ class Monitor:
             self.health_checker.increment_failure()
 
     async def _send_notification(self, dynamic_id, current_html, current_images, last_html, last_images):
-        """发送邮件通知"""
+        """发送邮件和QQ通知"""
         try:
             current_time = time.strftime("%Y-%m-%d %H:%M:%S")
             email_body = self.comment_renderer.render_email_content(
@@ -177,15 +200,26 @@ class Monitor:
                 f.write(email_body)
             logger.info(f"✅ 邮件内容已保存: {file_path}")
 
-            success = await asyncio.to_thread(
+            # 发送邮件
+            email_success = await asyncio.to_thread(
                 send_email,
-                subject=f"【{UP_NAME}动态监控】更新啦！",
+                subject=f"【{UP_NAME}动态监控】置顶评论已更新",
                 content=email_body
             )
-            if success:
+            if email_success:
                 logger.info("✅ 邮件发送成功")
             else:
                 logger.error("❌ 邮件发送失败")
+
+            # 新增：发送QQ群消息（纯文本）
+            qq_message = self.comment_renderer.generate_qq_message(
+                UP_NAME, dynamic_id, current_html, current_time
+            )
+            qq_results = await send_qq_message(qq_message)
+
+            qq_success_count = sum(1 for r in qq_results if r is True)
+            if qq_results:
+                logger.info(f"✅ QQ消息发送结果: {qq_success_count}/{len(qq_results)} 成功")
 
         except Exception as e:
             logger.error(f"❌ 发送通知出错: {e}")
@@ -202,7 +236,7 @@ class Monitor:
 
     async def run_monitoring_cycle(self):
         """执行一次完整监控循环"""
-        logger.info(f"🔍 第 {self.loop_count+1} 轮检查开始")
+        logger.info(f"🔍 第 {self.loop_count + 1} 轮检查开始")
         self.health_checker.last_health_check = time.time()
 
         await self.restart_browser_if_needed()
@@ -224,10 +258,11 @@ class Monitor:
         """运行监控主循环"""
         logger.info(f"=== {UP_NAME} 动态置顶评论监控启动 ===")
         logger.info(f"动态地址：{', '.join(DYNAMIC_URLS)}")
-        logger.info(f"监控发件邮箱：{EMAIL_USER}")  
+        logger.info(f"监控发件邮箱：{EMAIL_USER}") 
         logger.info(f"监控收件邮箱：{', '.join(TO_EMAILS)}")
-        logger.info(f"状态提醒邮箱：{', '.join(STATUS_MONITOR_EMAILS)}")
         logger.info(f"检查间隔：{self.check_interval} 秒")
+        logger.info(f"状态提醒邮箱：{', '.join(STATUS_MONITOR_EMAILS)}")
+        logger.info(f"推送群聊：{', '.join(QQ_GROUP_IDS)}")
 
         try:
             await self.initialize_browser()
@@ -247,7 +282,7 @@ class Monitor:
                         logger.info(f"⏰ 下次检查时间: {next_check} (等待{wait_time:.1f}秒)")
                         await asyncio.sleep(wait_time)
                     else:
-                        logger.warning(f"⏱️ 检查耗时({elapsed:.1f}秒)超过间隔，立即开始下一轮")
+                        logger.warning(f"⏱⏱⏱️ 检查耗时({elapsed:.1f}秒)超过间隔，立即开始下一轮")
 
                 except KeyboardInterrupt:
                     logger.info("⛔ 收到中断信号，准备退出...")
