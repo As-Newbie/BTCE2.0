@@ -14,12 +14,12 @@ QQ群推送配置模块 (config_qq.py)
 QQ_BOT_API_URL = "ws://127.0.0.1:8080/onebot/v11/ws"
 
 # API访问令牌（如果您的机器人需要认证）
-QQ_BOT_ACCESS_TOKEN = "<;UBllNdGKc7%>6D"
+QQ_BOT_ACCESS_TOKEN = ""
 
 # ===== 推送配置 =====
 # 要推送的QQ群号列表
 QQ_GROUP_IDS = [
-    "865320052",  # 第一个QQ群
+    "123456789",  # 第一个QQ群
 
     # 可继续添加更多QQ群
 ]
@@ -50,4 +50,5 @@ QQ_PUSH_ENABLED = True
 1. 请确保QQ机器人服务正常运行
 2. 确保监控程序可以访问QQ机器人API地址
 3. 请勿将此文件提交到公开的代码仓库
+
 """
