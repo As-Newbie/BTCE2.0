@@ -120,6 +120,7 @@ bili-dynamic-monitor/
 ├── main.py # 主程序入口
 ├── config.py # 主配置文件
 ├── config_email.py # 邮箱配置文件
+├── config_qq.py # QQ配置文件
 ├── dynamic.py # 监控动态列表
 ├── get_cookies.py # 获取Cookie脚本
 ├── cookies.json # 登录Cookie（自动生成）
@@ -128,6 +129,7 @@ bili-dynamic-monitor/
 ├── monitor.py # 监控主逻辑
 ├── render_comment.py # 评论渲染和检测
 ├── email_utils.py # 邮件发送工具
+├── qq_utils.py # QQ发送工具
 ├── health_check.py # 健康检查
 ├── logger_config.py # 日志配置
 ├── performance_monitor.py # 性能监控
@@ -276,6 +278,7 @@ BROWSER_RESTART_INTERVAL = 10 # 重启间隔
 - 请合理设置检查频率，避免对B站服务器造成过大压力
 - 请妥善保管个人Cookie和邮箱授权码，不要泄露给他人
 - 本项目完全非原创且主要依赖AI辅助开发，技术支持和维护有限
+
 
 
 
