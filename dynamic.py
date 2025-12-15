@@ -4,10 +4,11 @@
 
 DYNAMIC_URLS = [
     # 添加要监控的动态链接，格式如下：
-    # "https://t.bilibili.com/1128150856256978944",
+    # "https://t.bilibili.com/第一个动态ID",
     # "https://t.bilibili.com/另一个动态ID",
 ]
 
 # 如果列表为空，添加一个提示
 if not DYNAMIC_URLS:
+
     print("⚠️ 警告: DYNAMIC_URLS 列表为空，请添加要监控的动态链接")
