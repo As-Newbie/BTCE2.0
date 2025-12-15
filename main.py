@@ -3,9 +3,14 @@
 import asyncio
 import signal
 import sys
+import platform  # 添加平台检测
 from monitor import Monitor
-from status_monitor import status_monitor  # 导入状态监控器
-from logger_config import setup_logging
+from status_monitor import status_monitor
+from logger_config import setup_logging, logger
+from config import (
+    P1_CONTINUOUS_FAILURE, P2_SUCCESS_RATE_THRESHOLD,
+    PERFORMANCE_REPORT_CYCLE_INTERVAL, P2_WINDOW_CYCLES, P2_DURATION_CYCLES
+)
 
 
 class Application:
@@ -18,8 +23,11 @@ class Application:
 
     def setup_signal_handlers(self):
         """设置信号处理器"""
-        signal.signal(signal.SIGINT, self.signal_handler)
-        signal.signal(signal.SIGTERM, self.signal_handler)
+        try:
+            signal.signal(signal.SIGINT, self.signal_handler)
+            signal.signal(signal.SIGTERM, self.signal_handler)
+        except Exception as e:
+            print(f"⚠️ 信号处理器设置异常: {e}")
 
     def signal_handler(self, signum, frame):
         """信号处理函数"""
@@ -29,6 +37,15 @@ class Application:
         if self.status_check_task:
             self.status_check_task.cancel()
         sys.exit(0)
+
+    def setup_event_loop_policy(self):
+        """设置事件循环策略 - Windows兼容性"""
+        try:
+            if platform.system() == 'Windows' and hasattr(asyncio, 'WindowsProactorEventLoopPolicy'):
+                asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+                logger.info("✅ 已设置 WindowsProactorEventLoopPolicy")
+        except Exception as e:
+            logger.warning(f"⚠️ 设置事件循环策略失败: {e}")
 
     async def periodic_status_check(self):
         """定期状态检查任务"""
@@ -42,16 +59,26 @@ class Application:
 
                 # 记录状态信息
                 status_info = status_monitor.get_status_info()
-                print(f"📈 状态监控: {status_info}")
+                logger.info(f"📈 状态监控: {status_info}")
 
         except asyncio.CancelledError:
-            print("⏹️ 状态监控任务已取消")
+            logger.info("⏹️ 状态监控任务已取消")
         except Exception as e:
-            print(f"❌ 状态监控任务异常: {e}")
+            logger.error(f"❌ 状态监控任务异常: {e}")
 
     async def run(self):
         """运行应用程序"""
         setup_logging()
+
+        # 记录性能监控配置
+        logger.info("📊 性能监控配置:")
+        logger.info(f"  - 报告间隔: 每{PERFORMANCE_REPORT_CYCLE_INTERVAL}轮")
+        logger.info(f"  - P1告警: 连续失败{P1_CONTINUOUS_FAILURE}次")
+        logger.info(
+            f"  - P2告警: 最近{P2_WINDOW_CYCLES}轮成功率低于{P2_SUCCESS_RATE_THRESHOLD * 100:.0f}%持续{P2_DURATION_CYCLES}轮")
+
+        # 设置事件循环策略
+        self.setup_event_loop_policy()
 
         try:
             # 启动状态监控任务
@@ -66,7 +93,7 @@ class Application:
             await self.monitor.run()
 
         except Exception as e:
-            print(f"❌ 应用程序错误: {e}")
+            logger.error(f"❌ 应用程序错误: {e}")
             sys.exit(1)
         finally:
             # 确保状态监控任务被取消
