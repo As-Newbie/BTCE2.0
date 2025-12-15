@@ -51,10 +51,10 @@ class HealthChecker:
             return True
 
         except asyncio.TimeoutError:
-            logger.error("❌❌ 浏览器健康检查超时")
+            logger.error("❌ 浏览器健康检查超时")
             return False
         except Exception as e:
-            logger.error(f"❌❌ 浏览器健康检查失败: {e}")
+            logger.error(f"❌ 浏览器健康检查失败: {e}")
             return False
 
     async def check_network_connectivity(self):
@@ -66,7 +66,7 @@ class HealthChecker:
             # 这里可以添加ping测试或其他网络检查
             return True
         except Exception as e:
-            logger.error(f"❌❌ 网络连通性检查失败: {e}")
+            logger.error(f"❌ 网络连通性检查失败: {e}")
             return False
 
     @async_retry(NETWORK_RETRY_CONFIG)
@@ -118,10 +118,10 @@ class HealthChecker:
         success_rate = (self.success_count / total * 100) if total > 0 else 0
 
         return {
-            "运行时间": self.get_uptime(),
+            "重启后运行时间": self.get_uptime(),
             "抓取次数": total,
             "抓取成功次数": self.success_count,
             "抓取失败次数": total-self.success_count,
-            "抓取成功率": f"{success_rate:.1f}%",
-            "last_check": datetime.fromtimestamp(self.last_health_check).strftime('%H:%M:%S')
+            "抓取成功率": f"{success_rate:.3f}%",
+            "最后一次抓取时间": datetime.fromtimestamp(self.last_health_check).strftime('%H:%M:%S')
         }
