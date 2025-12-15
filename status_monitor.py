@@ -2,12 +2,12 @@
 import asyncio
 import json
 import time
-import os
-from datetime import datetime, timedelta
+# import os
+from datetime import datetime,  timedelta
 from pathlib import Path
 from logger_config import logger
 from email_utils import send_email
-from config_email import TO_EMAILS
+from config_email import STATUS_MONITOR_EMAILS  # 导入管理员邮箱
 from config import UP_NAME, STATUS_MONITOR_INTERVAL, NO_UPDATE_ALERT_HOURS
 
 
@@ -42,7 +42,7 @@ class StatusMonitor:
                             loaded_data[key] = default_status[key]
                     return loaded_data
             except Exception as e:
-                logger.error(f"❌ 加载状态文件失败: {e}")
+                logger.error(f"❌❌ 加载状态文件失败: {e}")
                 return default_status
         return default_status
 
@@ -52,7 +52,7 @@ class StatusMonitor:
             with open(self.status_file, 'w', encoding='utf-8') as f:
                 json.dump(self.status_data, f, ensure_ascii=False, indent=2)
         except Exception as e:
-            logger.error(f"❌ 保存状态文件失败: {e}")
+            logger.error(f"❌❌ 保存状态文件失败: {e}")
 
     def record_change(self):
         """记录检测到变化"""
@@ -87,7 +87,7 @@ class StatusMonitor:
         return False
 
     async def _send_no_update_alert(self, hours_without_update):
-        """发送无更新提醒邮件"""
+        """发送无更新提醒邮件到管理员邮箱"""
         try:
             current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             hours_int = int(hours_without_update)
@@ -119,7 +119,7 @@ class StatusMonitor:
                 </div>
 
                 <div class="info">
-                    <h3>📊 监控统计信息</h3>
+                    <h3>📊📊 监控统计信息</h3>
                     <p>• 最后检测到更新时间: {datetime.fromtimestamp(self.status_data['last_change_time']).strftime('%Y-%m-%d %H:%M:%S')}</p>
                     <p>• 总检测到变化次数: {self.status_data['total_changes']}</p>
                     <p>• 监控运行时长: {self._format_runtime()}</p>
@@ -127,7 +127,7 @@ class StatusMonitor:
                 </div>
 
                 <div class="info">
-                    <h3>🔍 建议检查项</h3>
+                    <h3>🔍🔍 建议检查项</h3>
                     <ol>
                         <li>确认动态链接是否仍然有效</li>
                         <li>检查UP主是否有新动态发布</li>
@@ -142,18 +142,19 @@ class StatusMonitor:
             success = await asyncio.to_thread(
                 send_email,
                 subject=subject,
-                content=content
+                content=content,
+                to_emails=STATUS_MONITOR_EMAILS  # 发送到管理员邮箱
             )
 
             if success:
-                logger.info("✅ 无更新提醒邮件发送成功")
+                logger.info("✅ 无更新提醒邮件发送成功（管理员邮箱）")
             else:
-                logger.error("❌ 无更新提醒邮件发送失败")
+                logger.error("❌❌ 无更新提醒邮件发送失败")
 
             return success
 
         except Exception as e:
-            logger.error(f"❌ 发送无更新提醒失败: {e}")
+            logger.error(f"❌❌ 发送无更新提醒失败: {e}")
             return False
 
     def _format_runtime(self):
@@ -179,8 +180,7 @@ class StatusMonitor:
             "最后更新": datetime.fromtimestamp(self.status_data["last_change_time"]).strftime('%Y-%m-%d %H:%M:%S'),
             "无更新时长": f"{hours_without_update:.1f}小时",
             "总变化次数": self.status_data["total_changes"],
-            "距上次提醒": alert_display,
-            "运行时长": self._format_runtime()
+            "累计运行时长": self._format_runtime()
         }
 
 
