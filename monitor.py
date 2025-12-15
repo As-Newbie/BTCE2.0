@@ -10,17 +10,19 @@ from playwright.async_api import async_playwright, TimeoutError as PlaywrightTim
 from config import (
     DYNAMIC_URLS, CHECK_INTERVAL, COOKIE_FILE, HISTORY_FILE,
     MAIL_SAVE_DIR, UP_NAME, BROWSER_CONFIG, BROWSER_RESTART_INTERVAL,
-    HEALTH_CHECK_INTERVAL
+    HEALTH_CHECK_INTERVAL,
+    P1_CONTINUOUS_FAILURE, P2_SUCCESS_RATE_THRESHOLD,
+    PERFORMANCE_REPORT_CYCLE_INTERVAL, P2_WINDOW_CYCLES, P2_DURATION_CYCLES
 )
 from render_comment import CommentRenderer
 from email_utils import send_email
-from config_email import TO_EMAILS,STATUS_MONITOR_EMAILS,EMAIL_USER
+from config_email import TO_EMAILS, STATUS_MONITOR_EMAILS, EMAIL_USER
 from health_check import HealthChecker
 from logger_config import logger
 from retry_decorator import BROWSER_RETRY_CONFIG, async_retry
 from performance_monitor import performance_monitor
-from qq_utils import send_qq_message  # 新增导入
-from config_qq import QQ_GROUP_IDS # 新增导入
+from qq_utils import send_qq_message
+from config_qq import QQ_GROUP_IDS
 
 
 class Monitor:
@@ -31,7 +33,7 @@ class Monitor:
         self.cookie_file = COOKIE_FILE
         self.history_file = HISTORY_FILE
         self.mail_save_dir = MAIL_SAVE_DIR
-        self.status_monitor = None  # 状态监控器实例
+        self.status_monitor = None
         self.comment_renderer = CommentRenderer()
         self.health_checker = HealthChecker()
 
@@ -121,14 +123,37 @@ class Monitor:
 
         return False
 
-    # ------------------ 辅助函数：去除表情 ------------------
+
     def _clean_html_emojis(self, html_text: str) -> str:
-        """去除 HTML 中表情图片，保留文字"""
+        """
+        将 HTML 中的表情图片替换为 alt 属性中的文本，而不是直接删除。
+        例如：<img alt="[doge]" ...> 会被替换为文本 [doge]
+        """
         if not html_text:
             return ""
-        cleaned = re.sub(r']+class="[^"]*emoji[^"]*"[^>]*>', '', html_text, flags=re.IGNORECASE)
-        cleaned = re.sub(r']+alt="[^"]*"[^>]*>', '', cleaned, flags=re.IGNORECASE)
-        return cleaned
+
+        try:
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(html_text, 'html.parser')
+
+            # 查找所有的图片标签
+            for img in soup.find_all('img'):
+                alt_text = img.get('alt', '')  # 获取alt属性
+                if alt_text:
+                    # 用方括号包裹alt文本，如[doge]，替换掉原图片标签
+                    img.replace_with(f"{alt_text}")
+                else:
+                    # 如果没有alt文本，统一用[表情]代替，避免空标签
+                    img.replace_with("[表情]")
+
+            # 返回处理后的HTML字符串
+            return str(soup)
+        except Exception as e:
+            logger.error(f"❌ 使用BeautifulSoup处理表情时失败，将回退至正则表达式清理: {e}")
+            # 如果BeautifulSoup处理失败，则回退到原来的正则表达式清理逻辑（作为保底）
+            cleaned = re.sub(r'<img[^>]*class="[^"]*emoji[^"]*"[^>]*>', '', html_text, flags=re.IGNORECASE)
+            cleaned = re.sub(r'<img[^>]*alt="[^"]*"[^>]*>', '', cleaned, flags=re.IGNORECASE)
+            return cleaned
 
     async def check_dynamic_changes(self, dynamic_id):
         """检查单个动态置顶评论变化（文字为主）"""
@@ -203,17 +228,17 @@ class Monitor:
             # 发送邮件
             email_success = await asyncio.to_thread(
                 send_email,
-                subject=f"【{UP_NAME}动态监控】置顶评论已更新",
+                subject=f"【{UP_NAME}动态监控】瞳瞳空间更新啦",
                 content=email_body
             )
             if email_success:
                 logger.info("✅ 邮件发送成功")
             else:
-                logger.error("❌ 邮件发送失败")
+                logger.error("❌❌ 邮件发送失败")
 
-            # 新增：发送QQ群消息（纯文本）
+            # 修改：传入 current_images 参数
             qq_message = self.comment_renderer.generate_qq_message(
-                UP_NAME, dynamic_id, current_html, current_time
+                UP_NAME, dynamic_id, current_html, current_time, current_images  # 添加 current_images
             )
             qq_results = await send_qq_message(qq_message)
 
@@ -222,7 +247,7 @@ class Monitor:
                 logger.info(f"✅ QQ消息发送结果: {qq_success_count}/{len(qq_results)} 成功")
 
         except Exception as e:
-            logger.error(f"❌ 发送通知出错: {e}")
+            logger.error(f"❌❌ 发送通知出错: {e}")
 
     def _save_history(self):
         """保存历史记录到文件"""
@@ -242,8 +267,22 @@ class Monitor:
         await self.restart_browser_if_needed()
         await performance_monitor.record_memory_usage()
 
+        # 记录循环开始时间
+        cycle_start_time = time.time()
+
         tasks = [self.check_dynamic_changes(url.split("/")[-1]) for url in DYNAMIC_URLS]
-        await asyncio.gather(*tasks, return_exceptions=True)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # 计算本轮是否成功（只要有一个任务成功，就认为本轮成功）
+        success = any(not isinstance(result, Exception) for result in results)
+        duration = time.time() - cycle_start_time
+
+        # 记录本轮结果到性能监控器
+        performance_monitor.record_cycle(
+            cycle_number=self.loop_count + 1,
+            success=success,
+            duration=duration
+        )
 
         self._save_history()
         # 将 loop_count 作为参数传入
@@ -254,11 +293,13 @@ class Monitor:
             status_info = self.status_monitor.get_status_info()
             logger.info(f"📈 状态监控: {status_info}")
 
+        return success, duration
+
     async def run(self):
         """运行监控主循环"""
         logger.info(f"=== {UP_NAME} 动态置顶评论监控启动 ===")
         logger.info(f"动态地址：{', '.join(DYNAMIC_URLS)}")
-        logger.info(f"监控发件邮箱：{EMAIL_USER}") 
+        logger.info(f"监控发件邮箱：{EMAIL_USER}")
         logger.info(f"监控收件邮箱：{', '.join(TO_EMAILS)}")
         logger.info(f"检查间隔：{self.check_interval} 秒")
         logger.info(f"状态提醒邮箱：{', '.join(STATUS_MONITOR_EMAILS)}")
@@ -266,12 +307,15 @@ class Monitor:
 
         try:
             await self.initialize_browser()
+
+            # 启动定期性能报告任务
             perf_task = asyncio.create_task(performance_monitor.periodic_report(interval_minutes=60))
+            logger.info("📊 定期性能报告任务已启动")
 
             while self.is_running:
                 cycle_start = time.time()
                 try:
-                    await self.run_monitoring_cycle()
+                    success, duration = await self.run_monitoring_cycle()
 
                     # 计算需要等待的时间，确保精确间隔
                     elapsed = time.time() - cycle_start
@@ -282,7 +326,7 @@ class Monitor:
                         logger.info(f"⏰ 下次检查时间: {next_check} (等待{wait_time:.1f}秒)")
                         await asyncio.sleep(wait_time)
                     else:
-                        logger.warning(f"⏱⏱⏱️ 检查耗时({elapsed:.1f}秒)超过间隔，立即开始下一轮")
+                        logger.warning(f"⏱️ 检查耗时({elapsed:.1f}秒)超过间隔，立即开始下一轮")
 
                 except KeyboardInterrupt:
                     logger.info("⛔ 收到中断信号，准备退出...")
@@ -295,8 +339,13 @@ class Monitor:
             logger.error(f"❌ 监控程序严重错误: {e}")
         finally:
             self.is_running = False
+            # 取消定期性能报告任务
             if 'perf_task' in locals():
                 perf_task.cancel()
+                try:
+                    await perf_task
+                except asyncio.CancelledError:
+                    logger.info("✅ 定期性能报告任务已取消")
             await self.safe_close_browser()
             logger.info("✅ 监控程序已安全退出")
 
