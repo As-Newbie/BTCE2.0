@@ -2,3 +2,6 @@ playwright>=1.40.0
 beautifulsoup4>=4.12.0
 aiohttp>=3.9.0
 psutil>=5.9.0
+requests>=2.31.0          # 同步HTTP请求
+lxml>=4.9.0               # 更快的HTML解析
+pytest>=7.4.0             # 测试框架
