@@ -48,17 +48,17 @@ class QQMessageSender:
                             logger.info(f"✅ QQ群 {group_id} 消息发送成功")
                             return True
                         else:
-                            logger.error(f"❌ QQ群 {group_id} 消息发送失败: {result}")
+                            logger.error(f"❌❌ QQ群 {group_id} 消息发送失败: {result}")
                             return False
                     else:
-                        logger.error(f"❌ QQ群 {group_id} API请求失败: {response.status}")
+                        logger.error(f"❌❌ QQ群 {group_id} API请求失败: {response.status}")
                         return False
 
         except asyncio.TimeoutError:
-            logger.error(f"❌ QQ群 {group_id} 消息发送超时")
+            logger.error(f"❌❌ QQ群 {group_id} 消息发送超时")
             return False
         except Exception as e:
-            logger.error(f"❌ QQ群 {group_id} 消息发送异常: {e}")
+            logger.error(f"❌❌ QQ群 {group_id} 消息发送异常: {e}")
             return False
 
     async def send_to_all_groups(self, message: str) -> List[bool]:
