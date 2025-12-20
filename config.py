@@ -1,5 +1,5 @@
 # config.py
-# import os
+import os
 from pathlib import Path
 
 # ===== 导入动态链接 =====
@@ -11,12 +11,13 @@ except ImportError:
     print("⚠️ 警告: 无法从 dynamic.py 导入 DYNAMIC_URLS，使用空列表")
 
 # ===== 基础配置 =====
-UP_NAME = "星瞳_Official"
-CHECK_INTERVAL = 8  # 秒
+UP_NAME = "user name"
+CHECK_INTERVAL = 8 # 秒
 MAX_RETRY_ATTEMPTS = 3
 RETRY_DELAY = 5  # 秒
 
 # ===== 文件路径配置 =====
+# 修改：使用当前文件所在目录作为基础目录
 BASE_DIR = Path(__file__).parent
 
 COOKIE_FILE = BASE_DIR / "cookies.json"
@@ -49,21 +50,21 @@ BROWSER_CONFIG = {
 BROWSER_RESTART_INTERVAL = 10  # 每10次循环重启浏览器
 HEALTH_CHECK_INTERVAL = 15  # 每15次循环进行健康检查
 TASK_TIMEOUT = 30  # 单个任务超时时间(秒)
-
-# ===== 状态监控配置 =====
-STATUS_MONITOR_INTERVAL = 7200  # 状态检查间隔（秒），2小时
+# 状态监控配置
+STATUS_MONITOR_INTERVAL = 7200  # 状态检查间隔（秒），1小时
 NO_UPDATE_ALERT_HOURS = 26      # 无更新提醒阈值（小时）
 
 # ===== 性能监控配置 =====
 MEMORY_THRESHOLD_MB = 500  # 内存阈值(MB)
-MAX_LOG_SIZE_MB = 10  # 单个日志文件最大大小(MB)
-LOG_BACKUP_COUNT = 5  # 保留的日志备份数量
+MAX_LOG_SIZE_MB = 5  # 单个日志文件最大大小(MB)
+LOG_BACKUP_COUNT = 1  # 保留的日志备份数量
 
 # ===== 性能报告配置（基于轮次）=====
-PERFORMANCE_REPORT_CYCLE_INTERVAL = 40  # 每8000轮发送一次报告
-P2_WINDOW_CYCLES = 20  # P2告警窗口轮次数（最近100轮）
-P2_DURATION_CYCLES = 10  # P2告警持续时间（连续10轮低成功率）
+PERFORMANCE_REPORT_CYCLE_INTERVAL = 8000  # 8000轮发送一次报告
+
 
 # ===== 告警阈值配置 =====
-P1_CONTINUOUS_FAILURE = 5  # 连续失败次数阈值（P1告警）
-P2_SUCCESS_RATE_THRESHOLD = 0.99  # 成功率阈值（99%）
+# P1 告警：累计抓取失败总次数达到此值时触发（非连续失败）
+P1_TOTAL_FAILURE_THRESHOLD = 100  # 失败次数阈值（P1告警）
+# P2 告警：在最近 P2_WINDOW_CYCLES 轮中，成功率低于此阈值时触发
+P2_SUCCESS_RATE_THRESHOLD = 0.8  # 成功率阈值（80%）
