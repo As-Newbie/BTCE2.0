@@ -8,6 +8,15 @@ from retry_decorator import NETWORK_RETRY_CONFIG, async_retry
 
 
 class HealthChecker:
+    # 在 health_check.py 的 HealthChecker 类中添加：
+
+    _instance = None
+
+    @classmethod
+    def instance(cls):
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
     """增强的健康检查类"""
 
     def __init__(self):
@@ -32,7 +41,7 @@ class HealthChecker:
         try:
             # 更新检查时间戳
             self.last_health_check = time.time()
-            
+
             # 设置页面超时
             page.set_default_timeout(15000)
 
@@ -62,7 +71,7 @@ class HealthChecker:
         try:
             # 更新检查时间戳
             self.last_health_check = time.time()
-            
+
             # 这里可以添加ping测试或其他网络检查
             return True
         except Exception as e:
@@ -74,7 +83,7 @@ class HealthChecker:
         """综合健康检查"""
         # 更新检查时间戳
         self.last_health_check = time.time()
-        
+
         checks = [
             self.check_memory_usage(),
             self.check_browser_health(page),
@@ -121,7 +130,7 @@ class HealthChecker:
             "重启后运行时间": self.get_uptime(),
             "抓取次数": total,
             "抓取成功次数": self.success_count,
-            "抓取失败次数": total-self.success_count,
+            "抓取失败次数": total - self.success_count,
             "抓取成功率": f"{success_rate:.3f}%",
             "最后一次抓取时间": datetime.fromtimestamp(self.last_health_check).strftime('%H:%M:%S')
         }
