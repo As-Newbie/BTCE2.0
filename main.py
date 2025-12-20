@@ -7,10 +7,7 @@ import platform  # 添加平台检测
 from monitor import Monitor
 from status_monitor import status_monitor
 from logger_config import setup_logging, logger
-from config import (
-    P1_CONTINUOUS_FAILURE, P2_SUCCESS_RATE_THRESHOLD,
-    PERFORMANCE_REPORT_CYCLE_INTERVAL, P2_WINDOW_CYCLES, P2_DURATION_CYCLES
-)
+
 
 
 class Application:
@@ -70,13 +67,7 @@ class Application:
         """运行应用程序"""
         setup_logging()
 
-        # 记录性能监控配置
-        logger.info("📊 性能监控配置:")
-        logger.info(f"  - 报告间隔: 每{PERFORMANCE_REPORT_CYCLE_INTERVAL}轮")
-        logger.info(f"  - P1告警: 连续失败{P1_CONTINUOUS_FAILURE}次")
-        logger.info(
-            f"  - P2告警: 最近{P2_WINDOW_CYCLES}轮成功率低于{P2_SUCCESS_RATE_THRESHOLD * 100:.0f}%持续{P2_DURATION_CYCLES}轮")
-
+        logger.info("📊 性能监控配置已加载（详见 performance_monitor 初始化日志）")
         # 设置事件循环策略
         self.setup_event_loop_policy()
 
