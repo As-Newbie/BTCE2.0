@@ -152,17 +152,27 @@ UP_NAME = "user name" # UP主名字（仅用于邮件标题）
 CHECK_INTERVAL = 8.5 # 检查间隔（秒）
 
 # ===== 监控配置 =====
-BROWSER_RESTART_INTERVAL = 100  # 每100次循环重启浏览器
-HEALTH_CHECK_INTERVAL = 10  # 每10次循环进行健康检查
+BROWSER_RESTART_INTERVAL = 10  # 每10次循环重启浏览器
+HEALTH_CHECK_INTERVAL = 15  # 每15次循环进行健康检查
 TASK_TIMEOUT = 30  # 单个任务超时时间(秒)
+
 # 状态监控配置
-STATUS_MONITOR_INTERVAL = 3600  # 状态检查间隔（秒），1小时
-NO_UPDATE_ALERT_HOURS = 22      # 无更新提醒阈值（小时）
+STATUS_MONITOR_INTERVAL = 7200  # 状态检查间隔（秒），1小时
+NO_UPDATE_ALERT_HOURS = 26      # 无更新提醒阈值（小时）
 
 # ===== 性能监控配置 =====
 MEMORY_THRESHOLD_MB = 500  # 内存阈值(MB)
-MAX_LOG_SIZE_MB = 10  # 单个日志文件最大大小(MB)
-LOG_BACKUP_COUNT = 5  # 保留的日志备份数量
+MAX_LOG_SIZE_MB = 5  # 单个日志文件最大大小(MB)
+LOG_BACKUP_COUNT = 1  # 保留的日志备份数量
+
+# ===== 性能报告配置（基于轮次）=====
+PERFORMANCE_REPORT_CYCLE_INTERVAL = 8000  # 8000轮发送一次报告
+
+# ===== 告警阈值配置 =====
+# P1 告警：累计抓取失败总次数达到此值时触发（非连续失败）
+P1_TOTAL_FAILURE_THRESHOLD = 100  # 失败次数阈值（P1告警）
+# P2 告警：在最近 P2_WINDOW_CYCLES 轮中，成功率低于此阈值时触发
+P2_SUCCESS_RATE_THRESHOLD = 0.8  # 成功率阈值（80%）
 ```
 ### 邮箱配置（config_email.py）
 
@@ -277,6 +287,7 @@ BROWSER_RESTART_INTERVAL = 10 # 重启间隔
 - 请合理设置检查频率，避免对B站服务器造成过大压力
 - 请妥善保管个人Cookie和邮箱授权码，不要泄露给他人
 - 本项目完全非原创且主要依赖AI辅助开发，技术支持和维护有限
+
 
 
 
