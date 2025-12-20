@@ -10,9 +10,7 @@ from playwright.async_api import async_playwright, TimeoutError as PlaywrightTim
 from config import (
     DYNAMIC_URLS, CHECK_INTERVAL, COOKIE_FILE, HISTORY_FILE,
     MAIL_SAVE_DIR, UP_NAME, BROWSER_CONFIG, BROWSER_RESTART_INTERVAL,
-    HEALTH_CHECK_INTERVAL,
-    P1_CONTINUOUS_FAILURE, P2_SUCCESS_RATE_THRESHOLD,
-    PERFORMANCE_REPORT_CYCLE_INTERVAL, P2_WINDOW_CYCLES, P2_DURATION_CYCLES
+    HEALTH_CHECK_INTERVAL, P1_TOTAL_FAILURE_THRESHOLD, P2_SUCCESS_RATE_THRESHOLD
 )
 from render_comment import CommentRenderer
 from email_utils import send_email
@@ -39,6 +37,7 @@ class Monitor:
 
         self.loop_count = 0
         self.is_running = True
+        self.current_success = False  # 新增：记录当前轮次是否成功
 
         # 修改：按照UP_NAME存储历史记录，而不是动态ID
         if os.path.exists(self.history_file):
@@ -102,7 +101,7 @@ class Monitor:
 
     async def restart_browser_if_needed(self):
         """根据轮次定期重启浏览器或执行健康检查"""
-        self.loop_count += 1
+
         restart_needed = False
 
         if self.loop_count % BROWSER_RESTART_INTERVAL == 0:
@@ -122,7 +121,6 @@ class Monitor:
             return True
 
         return False
-
 
     def _clean_html_emojis(self, html_text: str) -> str:
         """
@@ -160,7 +158,7 @@ class Monitor:
         try:
             if not self.context:
                 logger.warning("⚠️ 浏览器上下文不存在，跳过本次检查")
-                return
+                return False  # 返回False表示失败
 
             page = await self.context.new_page()
             try:
@@ -171,13 +169,13 @@ class Monitor:
             except (asyncio.TimeoutError, PlaywrightTimeoutError):
                 logger.error(f"⏰ 动态 {dynamic_id} 获取置顶评论超时")
                 await page.close()
-                return
+                return False  # 返回False表示失败
 
             await page.close()
 
             if not current_html or "未找到置顶评论" in current_html:
                 logger.warning(f"⚠️ 动态 {dynamic_id} 未找到置顶评论")
-                return
+                return False  # 返回False表示失败
 
             # 修改：使用UP_NAME作为键，而不是dynamic_id
             last_record = self.history_data.get(UP_NAME, {"html": "", "images": []})
@@ -205,9 +203,12 @@ class Monitor:
             self.history_data[UP_NAME] = {"html": current_html, "images": current_images}
             self.health_checker.increment_success()
 
+            return True  # 返回True表示成功
+
         except Exception as e:
             logger.error(f"❌ 检查动态 {dynamic_id} 出错: {e}")
             self.health_checker.increment_failure()
+            return False  # 返回False表示失败
 
     async def _send_notification(self, dynamic_id, current_html, current_images, last_html, last_images):
         """发送邮件和QQ通知"""
@@ -261,7 +262,8 @@ class Monitor:
 
     async def run_monitoring_cycle(self):
         """执行一次完整监控循环"""
-        logger.info(f"🔍 第 {self.loop_count + 1} 轮检查开始")
+        self.loop_count += 1
+        logger.info(f"🔍 第 {self.loop_count} 轮检查开始")
         self.health_checker.last_health_check = time.time()
 
         await self.restart_browser_if_needed()
@@ -274,12 +276,34 @@ class Monitor:
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # 计算本轮是否成功（只要有一个任务成功，就认为本轮成功）
-        success = any(not isinstance(result, Exception) for result in results)
+        # 重要修复：这里应该检查任务返回的结果，而不是异常
+        success = False
+        for result in results:
+            if isinstance(result, bool):
+                if result:  # 如果结果为True，表示成功
+                    success = True
+                    break
+            elif not isinstance(result, Exception):
+                # 如果返回的不是异常，也不是bool，也视为成功（保持向后兼容）
+                success = True
+                break
+
+        # 如果没有明确的结果，使用旧逻辑
+        if not results:
+            success = any(not isinstance(result, Exception) for result in results)
+
         duration = time.time() - cycle_start_time
 
-        # 记录本轮结果到性能监控器
+        # 记录本轮结果到性能监控器 - 添加调试日志
+        logger.debug(f"📊 性能监控记录: 轮次={self.loop_count}, 成功={success}, 耗时={duration:.2f}秒")
+
+        # 显示告警阈值信息
+        if self.loop_count % 5 == 0:  # 每5轮显示一次阈值信息
+            logger.debug(
+                f"📊 告警阈值: P1={P1_TOTAL_FAILURE_THRESHOLD}次失败, P2={P2_SUCCESS_RATE_THRESHOLD * 100:.0f}%成功率")
+
         performance_monitor.record_cycle(
-            cycle_number=self.loop_count + 1,
+            cycle_number=self.loop_count,
             success=success,
             duration=duration
         )
@@ -304,6 +328,10 @@ class Monitor:
         logger.info(f"检查间隔：{self.check_interval} 秒")
         logger.info(f"状态提醒邮箱：{', '.join(STATUS_MONITOR_EMAILS)}")
         logger.info(f"推送群聊：{', '.join(QQ_GROUP_IDS)}")
+
+        # 显示性能监控器配置
+        logger.info(
+            f"📊 性能监控配置: P1告警阈值={P1_TOTAL_FAILURE_THRESHOLD}次失败, P2告警阈值={P2_SUCCESS_RATE_THRESHOLD * 100:.0f}%成功率")
 
         try:
             await self.initialize_browser()
@@ -333,6 +361,12 @@ class Monitor:
                     break
                 except Exception as e:
                     logger.error(f"❌ 监控循环出错: {e}")
+                    # 记录本轮失败
+                    performance_monitor.record_cycle(
+                        cycle_number=self.loop_count,
+                        success=False,
+                        duration=0
+                    )
                     await asyncio.sleep(5)  # 出错时等待5秒
 
         except Exception as e:
