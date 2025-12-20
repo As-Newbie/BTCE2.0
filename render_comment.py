@@ -75,7 +75,7 @@ class CommentRenderer:
                         )
                         comment_images.extend(img_src_list)
                     except Exception as e:
-                        logger.error(f"❌❌ 通过shadow DOM获取图片失败: {e}")
+                        logger.error(f"❌ 通过shadow DOM获取图片失败: {e}")
 
                         # 备用方法：尝试直接获取图片元素
                         try:
@@ -90,7 +90,7 @@ class CommentRenderer:
                                     if src not in comment_images:
                                         comment_images.append(src)
                         except Exception as e2:
-                            logger.error(f"❌❌ 直接获取图片元素失败: {e2}")
+                            logger.error(f"❌ 直接获取图片元素失败: {e2}")
 
                 break
 
@@ -109,18 +109,18 @@ class CommentRenderer:
 
             # 检测文字变化
             if last_text and current_text != last_text:
-                logger.info("🔔🔔 检测到置顶评论文字变化！")
+                logger.info("🔔 检测到置顶评论文字变化！")
                 return True
 
             # 检测图片变化
             if set(current_images) != set(last_images):
-                logger.info("🔔🔔 检测到置顶评论图片变化！")
+                logger.info("🔔 检测到置顶评论图片变化！")
                 return True
 
             return False
 
         except Exception as e:
-            logger.error(f"❌❌ 检测评论变化失败: {e}")
+            logger.error(f"❌ 检测评论变化失败: {e}")
             return False
 
     def render_email_content(self, dynamic_id, current_html, current_images, last_html, last_images, current_time=None):
@@ -257,7 +257,7 @@ class CommentRenderer:
 
             # 添加图片（如果有）
             if current_images:
-                qq_message += "\n📸 相关图片：\n"
+                qq_message += "📸 相关图片：\n"
                 # 限制最多发送3张图片，避免消息过长
                 for i, img_url in enumerate(current_images[:3]):
                     # 使用CQ码发送图片
@@ -273,7 +273,7 @@ class CommentRenderer:
             return qq_message
 
         except Exception as e:
-            logger.error(f"❌❌❌❌ 生成QQ消息失败: {e}")
+            logger.error(f"❌ 生成QQ消息失败: {e}")
             # 备用消息格式
             backup_msg = f"【{up_name}】置顶评论更新通知\n动态: {dynamic_id}\n时间: {current_time}"
             if current_images:
