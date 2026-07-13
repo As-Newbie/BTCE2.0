@@ -98,7 +98,7 @@ EMAIL_MODE = "text"
 BILI_MODE = "screenshot"
 
 # ===== 动态自动发布配置 =====
-AUTO_PUBLISH_ENABLED = False  # 置顶评论变更时自动发布B站动态（含截图+话题+链接）
+AUTO_PUBLISH_ENABLED = True  # 置顶评论变更时自动发布B站动态（含截图+话题+链接，dry-run模式见auto_publish.py）
 AUTO_PUBLISH_TOPIC_ID = 66066  # 话题ID（小星星的家）
 AUTO_PUBLISH_TOPIC_NAME = "小星星的家"  # 话题名称
 

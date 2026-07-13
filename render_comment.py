@@ -33,16 +33,17 @@ class CommentRenderer:
 
     async def get_pinned_comment(self, page, dynamic_id):
         """
-        抓取置顶评论：
+        抓取置顶评论，返回 (html, images, rpid)：
         - pinned_comment_html: 评论 HTML（含文字+表情）
         - comment_images: 评论区上传的图片 URL 列表
+        - rpid: 评论ID，从 rich-text 的 data-rpid 属性获取
         """
         await page.goto(f"https://t.bilibili.com/{dynamic_id}")
 
         try:
             await page.wait_for_selector("bili-comment-thread-renderer", timeout=15000)
         except:
-            return "未找到置顶评论", []
+            return "未找到置顶评论", [], None
 
         # 模拟滚动加载更多评论（v4.8 优化：5→3次滚动, 1s→0.5s, 省~4s/轮）
         for _ in range(3):
@@ -51,6 +52,7 @@ class CommentRenderer:
 
         pinned_comment_html = None
         comment_images = []
+        rpid = None
 
         comment_items = await page.query_selector_all("bili-comment-thread-renderer")
         for item in comment_items:
@@ -60,6 +62,22 @@ class CommentRenderer:
                 content_element = await item.query_selector("bili-rich-text p#contents")
                 if content_element:
                     pinned_comment_html = await content_element.inner_html()
+
+                # rpid：从 bili-rich-text 的 shadow DOM 中 emoji img 的 data-rpid 获取
+                try:
+                    rpid_raw = await item.evaluate("""(el) => {
+                        const shadow = el.shadowRoot;
+                        if (!shadow) return null;
+                        const comment = shadow.querySelector('bili-comment-renderer#comment');
+                        if (!comment || !comment.shadowRoot) return null;
+                        const richText = comment.shadowRoot.querySelector('bili-rich-text');
+                        if (!richText || !richText.shadowRoot) return null;
+                        const rpidEl = richText.shadowRoot.querySelector('[data-rpid]');
+                        return rpidEl ? rpidEl.getAttribute('data-rpid') : null;
+                    }""")
+                    rpid = rpid_raw
+                except Exception:
+                    pass
 
                 # 评论区上传图片 - 修复图片获取逻辑
                 pics_renderer = await item.query_selector("bili-comment-pictures-renderer")
@@ -109,8 +127,8 @@ class CommentRenderer:
                 break
 
         if pinned_comment_html:
-            return pinned_comment_html.strip(), comment_images
-        return "未找到置顶评论", []
+            return pinned_comment_html.strip(), comment_images, rpid
+        return "未找到置顶评论", [], None
 
     async def detect_comment_change(self, current_html, current_images, last_html, last_images):
         """检测评论变化"""

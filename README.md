@@ -19,7 +19,7 @@
 | **v4.5** | 修复 B站旧版 API 下线（404），更换 polymer 新版接口；API 独立健康统计+P1/P2告警+日报双通道 |
 | **v4.6** | 直播通知附加房间状态标签：room_init API 补充 encrypted/锁房/隐藏/付费/拜年纪，消息中标记 🔒密码保护 等 |
 | **v4.7** | 管理群独立 + Cookie远程更新（@机器人指令→邮箱二维码→扫码→自动保存）+ 测试指令增强（轮次/成功率展示） |
-| **v4.8** | 性能优化：Playwright页面复用（3-4s/轮）+ 滚动优化（5→3次）+ 检查间隔缩短（8→6s）+ 浏览器重启间隔延长（10→100轮） |
+| **v4.8** | 性能优化（页面复用+滚动优化+间隔调优）+ B站推送评论直达链接（rpid穿透Shadow DOM） |
 
 ## v4.8 更新
 
@@ -28,10 +28,12 @@
 - **检查间隔缩短**：`CHECK_INTERVAL` 8→6s，配合页面复用后 3s 工作耗时留足缓冲
 - **浏览器重启间隔**：`BROWSER_RESTART_INTERVAL` 10→100 轮，减少重启开销
 - **综合效果**：单轮总周期 8s→6s，8000 轮从 19.4h→13.3h（-31%）
+- **评论直达链接**：穿透 B站 Web Component 三层 Shadow DOM 提取 `rpid`（评论ID），B站推送新增 `#reply{rpid}` 直达链接，两条链接用 `💻跳转链接` / `📱跳转链接` 区分
 
 ### Claude (AI Assistant) 的贡献
 - **monitor.py**：`self.page` 持久化复用、`safe_close_browser`/`restart_browser_if_needed` 页面清理、`check_dynamic_changes` 创建/复用/不关闭逻辑
-- **render_comment.py**：滚动次数和间隔优化
+- **render_comment.py**：滚动次数和间隔优化、三层 Shadow DOM 穿透提取 rpid
+- **auto_publish.py**：评论直达链接 + dry-run 本地调试模式
 - **config.py**：`CHECK_INTERVAL` 8→6、`BROWSER_RESTART_INTERVAL` 10→100
 
 ## v4.7 更新

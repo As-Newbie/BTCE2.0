@@ -273,7 +273,7 @@ class Monitor:
                 self.page = await self.context.new_page()
             page = self.page
             try:
-                current_html, current_images = await asyncio.wait_for(
+                current_html, current_images, rpid = await asyncio.wait_for(
                     self.comment_renderer.get_pinned_comment(page, dynamic_id), timeout=20)
             except (asyncio.TimeoutError, PlaywrightTimeoutError):
                 logger.error(f"⏰ 超时 {dynamic_id}")
@@ -301,7 +301,7 @@ class Monitor:
 
             if should:
                 # 通知分流：QQ+邮件默认text模式先推(不阻塞)，再截图推B站
-                await self._send_notification(dynamic_id, current_html, current_images, last_html, last_images)
+                await self._send_notification(dynamic_id, current_html, current_images, last_html, last_images, rpid)
                 if self.status_monitor: self.status_monitor.record_change()
 
             pc[dynamic_id] = {"html": current_html, "images": current_images, "last_updated": time.strftime("%Y-%m-%d %H:%M:%S")}
@@ -371,7 +371,7 @@ class Monitor:
             logger.warning(f"⚠️ 置顶评论截图失败: {e}")
         return None
 
-    async def _send_notification(self, dynamic_id, cur_html, cur_img, last_html, last_img):
+    async def _send_notification(self, dynamic_id, cur_html, cur_img, last_html, last_img, rpid=None):
         """发送通知：按QQ_MODE/EMAIL_MODE/BILI_MODE分流，text模式先推不阻塞截图"""
         try:
             ct = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -414,7 +414,7 @@ class Monitor:
                     asyncio.create_task(
                         auto_publish.publish_dynamic(dynamic_id, screenshot_path,
                                                      await self.context.cookies(),
-                                                     UP_NAME, AUTO_PUBLISH_TOPIC_ID, AUTO_PUBLISH_TOPIC_NAME)
+                                                     UP_NAME, AUTO_PUBLISH_TOPIC_ID, AUTO_PUBLISH_TOPIC_NAME, rpid)
                     )
                     logger.info("📤 自动发布动态已提交")
         except Exception as e:
