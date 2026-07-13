@@ -33,8 +33,6 @@
 - **monitor.py**：`self.page` 持久化复用、`safe_close_browser`/`restart_browser_if_needed` 页面清理、`check_dynamic_changes` 创建/复用/不关闭逻辑
 - **render_comment.py**：滚动次数和间隔优化
 - **config.py**：`CHECK_INTERVAL` 8→6、`BROWSER_RESTART_INTERVAL` 10→100
-- **性能诊断**：日志分析、CPU/内存/磁盘排查、根因定位、测试实例对比验证
-- **部署清理**：测试实例停用删除、垃圾文件清理
 
 ## v4.7 更新
 
