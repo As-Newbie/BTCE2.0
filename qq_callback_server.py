@@ -168,6 +168,7 @@ async def handle_callback(request: web.Request) -> web.Response:
         if _monitor:
             stats = _monitor.health_checker.get_stats(total_loops=_monitor.loop_count)
             monitor_info = (
+                f"🔗 当前置顶: https://t.bilibili.com/{_monitor.pinned_dynamic_id}\n"
                 f"🔄 当前轮次: 第{_monitor.loop_count}轮\n"
                 f"⏱ 已运行: {stats.get('重启后运行时间', '?')}\n"
                 f"📊 置顶抓取: {stats.get('抓取成功率', '?')} ({stats.get('抓取成功次数', 0)}/{stats.get('抓取次数', 0)})\n"
