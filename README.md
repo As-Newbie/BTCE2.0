@@ -20,18 +20,17 @@
 | **v4.6** | 直播通知附加房间状态标签：room_init API 补充 encrypted/锁房/隐藏/付费/拜年纪，消息中标记 🔒密码保护 等 |
 | **v4.7** | 管理群独立 + Cookie远程更新（@机器人指令→邮箱二维码→扫码→自动保存）+ 测试指令增强（轮次/成功率展示） |
 | **v4.8** | 性能优化：Playwright页面复用（3-4s/轮）+ 滚动优化（5→3次）+ 检查间隔缩短（8→6s）+ 浏览器重启间隔延长（10→100轮） |
-| **v4.9** | B站推送评论直达链接：rpid穿透Shadow DOM + `#reply{rpid}` 双链接 + dry-run调试模式 + `@机器人 测试` 显示当前置顶 |
+| **v4.9** | B站推送评论直达链接：rpid穿透Shadow DOM + `#reply{rpid}` 双链接 + `@机器人 测试` 显示当前置顶 |
 
 ## v4.9 更新
 
 - **评论直达链接**：穿透 B站 Web Component 三层 Shadow DOM 提取 `rpid`（评论ID），B站推送新增 `#reply{rpid}` 直达链接
 - **双链接推送**：`💻跳转链接`（评论直达）+ `📱跳转链接`（动态页），替代原来被 B站 自动转"网页链接"卡片的方式
-- **dry-run 调试模式**：`auto_publish.py` `DRY_RUN` 开关，本地调试时写 JSON/TXT 到 `dry_run_output/`，不走 API
 - **状态显示当前置顶**：`@机器人 测试` 回复新增 `🔗 当前置顶: https://t.bilibili.com/{ID}`
 
 ### Claude (AI Assistant) 的贡献
 - **render_comment.py**：三层 Shadow DOM 穿透提取 rpid
-- **auto_publish.py**：评论直达链接 + dry-run 本地调试模式 + 双链接格式
+- **auto_publish.py**：评论直达链接 + 双链接格式
 - **qq_callback_server.py**：`@机器人 测试` 新增当前置顶动态链接
 - **monitor.py**：rpid 从 `get_pinned_comment` 传递到 `publish_dynamic`
 

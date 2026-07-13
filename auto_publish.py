@@ -17,10 +17,6 @@ from logger_config import logger
 BILI_UPLOAD_URL = "https://api.bilibili.com/x/dynamic/feed/draw/upload_bfs"
 BILI_PUBLISH_URL = "https://api.bilibili.com/x/dynamic/feed/create/dyn"
 
-# dry-run模式：为True时跳过B站API，把推送内容写本地文件（本地调试用）
-DRY_RUN = False
-DRY_RUN_DIR = Path(__file__).parent / "dry_run_output"
-
 
 def _csrf_from_cookies(cookies: list) -> str:
     """从cookie列表中提取bili_jct作为CSRF token"""
@@ -101,41 +97,6 @@ async def publish_dynamic(dynamic_id: str, screenshot_path: str, cookies: list,
     发布B站动态（图文+话题+超链接）。
     返回True表示发布成功，False表示失败。
     """
-    # ---- dry-run：不调B站API，写本地文件 ----
-    if DRY_RUN:
-        reply_url = f"https://t.bilibili.com/{dynamic_id}#reply{rpid}" if rpid else ""
-        link_url = f"https://t.bilibili.com/{dynamic_id}?comment_on=1&spm_id_from=333.1387.0.0"
-
-        contents = [
-            {"raw_text": f"【{up_name}】瞳瞳空间更新啦~", "type": 1, "biz_id": ""},
-        ]
-        if rpid:
-            contents.append({"raw_text": f"\n💻跳转链接 {reply_url}", "type": 1, "biz_id": ""})
-        contents.append({"raw_text": f"\n📱跳转链接 {link_url}", "type": 1, "biz_id": ""})
-
-        body = {
-            "dyn_req": {
-                "scene": 2,
-                "content": {"contents": contents},
-                "pics": [{"img_src": screenshot_path, "img_width": 0, "img_height": 0, "img_size": 0}],
-                "topic": {"id": topic_id, "name": topic_name, "from_source": "dyn.web.list", "from_topic_id": 0},
-                "option": {"up_choose_comment": 0, "close_comment": 0},
-                "meta": {"app_meta": {"from": "create.dynamic.web", "mobi_app": "web"}},
-            }
-        }
-
-        DRY_RUN_DIR.mkdir(parents=True, exist_ok=True)
-        ts = time.strftime("%Y%m%d_%H%M%S")
-        out_file = DRY_RUN_DIR / f"bili_publish_{dynamic_id}_{ts}.json"
-        out_file.write_text(json.dumps(body, ensure_ascii=False, indent=2), encoding="utf-8")
-        preview = "\n".join(c["raw_text"] for c in contents)
-        preview_file = DRY_RUN_DIR / f"bili_publish_{dynamic_id}_{ts}.txt"
-        preview_file.write_text(preview, encoding="utf-8")
-        logger.info(f"[DRY-RUN] B站推送内容已写本地: {out_file}")
-        logger.info(f"[DRY-RUN] 预览文本:\n{preview}")
-        return True
-
-    # ---- 正常生产路径 ----
     csrf = _csrf_from_cookies(cookies)
     if not csrf:
         logger.error("❌ auto_publish: 未找到bili_jct cookie，无法发布动态")
