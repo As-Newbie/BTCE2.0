@@ -52,6 +52,7 @@ class Monitor:
         self.playwright = None
         self.browser = None
         self.context = None
+        self.page = None  # v4.8：持久化页面复用
 
     def update_pinned_dynamic_id(self, new_id: str):
         """运行时动态更换置顶动态ID（供QQ回调指令调用），重置last_pinned避免误报"""
@@ -85,7 +86,12 @@ class Monitor:
         logger.info("✅ 浏览器初始化完成")
 
     async def safe_close_browser(self):
+        """安全关闭浏览器，同时清理持久化页面"""
         try:
+            if self.page and not self.page.is_closed():
+                try: await self.page.close()
+                except: pass
+            self.page = None
             if self.context: await self.context.close()
             if self.browser: await self.browser.close()
             if self.playwright: await self.playwright.stop()
@@ -94,8 +100,13 @@ class Monitor:
             logger.error(f"❌ 关闭浏览器失败: {e}")
 
     async def restart_browser_if_needed(self):
+        """按间隔重启浏览器，v4.8：先清理持久化页面"""
         if self.loop_count % BROWSER_RESTART_INTERVAL == 0:
             logger.info("♻️ 浏览器重启")
+            if self.page and not self.page.is_closed():
+                try: await self.page.close()
+                except: pass
+            self.page = None
             await self.safe_close_browser()
             await asyncio.sleep(2)
             await self.initialize_browser()
@@ -254,18 +265,22 @@ class Monitor:
     # 置顶评论检测
     # ------------------------------------------------------------------
     async def check_dynamic_changes(self, dynamic_id, is_new_pinned=False):
+        """检测置顶评论变化，v4.8：页面复用，不每轮创建/销毁"""
         try:
             if not self.context: return False
-            page = await self.context.new_page()
+            # v4.8：页面复用，仅在首次或页面已关闭时创建新页面
+            if self.page is None or self.page.is_closed():
+                self.page = await self.context.new_page()
+            page = self.page
             try:
                 current_html, current_images = await asyncio.wait_for(
                     self.comment_renderer.get_pinned_comment(page, dynamic_id), timeout=20)
             except (asyncio.TimeoutError, PlaywrightTimeoutError):
                 logger.error(f"⏰ 超时 {dynamic_id}")
-                await page.close(); return False
+                return False
             if not current_html or "未找到置顶评论" in current_html:
                 logger.warning(f"⚠️ 无置顶评论 {dynamic_id}")
-                await page.close(); return False
+                return False
 
             pc = self.history_data.get("pinned_comments", {})
             last_html = ""; last_images = []
@@ -282,7 +297,7 @@ class Monitor:
             logger.info(f"📝 当前: {cur_text} | 上次: {last_text or '无'}")
             should = (is_new_pinned and self.history_data.get("last_pinned_dynamic_id")) or (not last_text or cur_text != last_text)
 
-            await page.close()
+            # v4.8：不复用时不关闭页面
 
             if should:
                 # 通知分流：QQ+邮件默认text模式先推(不阻塞)，再截图推B站

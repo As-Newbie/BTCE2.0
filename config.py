@@ -34,7 +34,7 @@ LIVE_SUCCESS_RATE_THRESHOLD = 0.9  # 成功率阈值（P2告警）
 UP_NAME = "星瞳_Official"  # 监控目标昵称
 UP_UID = "401315430"  # 监控目标B站UID
 PINNED_DYNAMIC_ID = "1208161183564038147"  # 置顶动态ID（手动配置）
-CHECK_INTERVAL = 8  # 秒
+CHECK_INTERVAL = 6  # v4.8：页面复用后缩短检查间隔（原8s）
 MAX_RETRY_ATTEMPTS = 3
 RETRY_DELAY = 5  # 秒
 
@@ -56,7 +56,7 @@ BROWSER_CONFIG = {
 }
 
 # ===== 监控配置 =====
-BROWSER_RESTART_INTERVAL = 10  # 每10次循环重启浏览器
+BROWSER_RESTART_INTERVAL = 100  # v4.8：页面复用后减少重启频率（原10轮）
 HEALTH_CHECK_INTERVAL = 15  # 每15次循环进行健康检查
 TASK_TIMEOUT = 30  # 单个任务超时时间(秒)
 MEMORY_THRESHOLD_MB = 1500  # 内存阈值(MB)

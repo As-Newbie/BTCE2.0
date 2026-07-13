@@ -44,10 +44,10 @@ class CommentRenderer:
         except:
             return "未找到置顶评论", []
 
-        # 模拟滚动加载更多评论
-        for _ in range(5):
+        # 模拟滚动加载更多评论（v4.8 优化：5→3次滚动, 1s→0.5s, 省~4s/轮）
+        for _ in range(3):
             await page.evaluate("window.scrollBy(0, 1000)")
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.5)
 
         pinned_comment_html = None
         comment_images = []
