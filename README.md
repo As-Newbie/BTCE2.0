@@ -29,10 +29,6 @@
 - **浏览器重启间隔**：`BROWSER_RESTART_INTERVAL` 10→100 轮，减少重启开销
 - **综合效果**：单轮总周期 8s→6s，8000 轮从 19.4h→13.3h（-31%）
 
-### XTong 的贡献
-- **需求设计**：性能优化方向决策，检查间隔调优拍板
-- **测试验证**：云服务器测试实例页面复用稳定性验证（54轮无漏检无超时）
-
 ### Claude (AI Assistant) 的贡献
 - **monitor.py**：`self.page` 持久化复用、`safe_close_browser`/`restart_browser_if_needed` 页面清理、`check_dynamic_changes` 创建/复用/不关闭逻辑
 - **render_comment.py**：滚动次数和间隔优化
