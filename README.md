@@ -255,7 +255,7 @@ pm2 start main.py --name bili-monitor --interpreter python3
 | 监控目标 | `dynamic.py` `MONITOR_LIST` | UID + 名称 |
 | 置顶动态 ID | `config.py` `PINNED_DYNAMIC_ID` | 手动配置，换置顶时修改 |
 | 推送模式 | `config.py` `QQ_MODE`/`EMAIL_MODE`/`BILI_MODE` | text=文字+图片, screenshot=截图 |
-| 检查间隔 | `config.py` `CHECK_INTERVAL` | 默认 8 秒 |
+| 检查间隔 | `config.py` `CHECK_INTERVAL` | 默认 6 秒（v4.8页面复用优化后缩短） |
 | 邮箱 | `config_email.py` | SMTP + 收发人 |
 | QQ 推送 | `config_qq.py` | 机器人 API + 群号 |
 | 浏览器参数 | `config.py` `BROWSER_CONFIG` | headless 模式 |
