@@ -5,7 +5,6 @@
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
 [![Playwright](https://img.shields.io/badge/Playwright-1.40%2B-45ba4b)](https://playwright.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Status](https://img.shields.io/badge/status-active-brightgreen)](https://github.com/X-tong2568/BTCE)
 
 ![BTCE 架构图](mermaid-diagram.png)
 
