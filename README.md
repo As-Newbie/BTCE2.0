@@ -2,6 +2,8 @@
 
 基于 Python + Playwright 的 Bilibili UP 主动态和直播自动化监控系统，支持多通道实时通知及自动发布动态。
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 ![BTCE 架构图](mermaid-diagram.png)
 
 ## 版本演进
@@ -223,6 +225,22 @@ BTCE3.0/
 ├── logger_config.py           # 日志配置
 ├── get_cookies.py             # Cookie 获取工具
 ├── requirements.txt           # Python 依赖
+├── ecosystem.config.js        # PM2 进程管理配置（服务器）
+├── LICENSE                    # MIT 开源协议
+│
+├── cookies.json               # B站登录Cookie（不提交）
+├── bili_pinned_comment.json   # 置顶评论历史记录
+├── monitor_status.json        # 监控运行状态快照
+│
+├── logs/                      # 日志目录（自动生成）
+├── sent_emails/               # 已发邮件+截图备份（自动生成）
+├── sent_up_dynamic_emails/    # 已发B站动态截图备份
+├── data/                      # 数据缓存目录
+│
+├── test_publish.py            # B站发布测试脚本（本地）
+├── test_api_alerts.py         # API告警测试脚本（本地）
+├── manual_publish.py          # 手动发布工具（本地）
+│
 └── .gitignore                 # Git 忽略规则
 ```
 
