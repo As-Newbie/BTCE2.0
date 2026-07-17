@@ -237,10 +237,6 @@ BTCE3.0/
 ├── sent_up_dynamic_emails/    # 已发B站动态截图备份
 ├── data/                      # 数据缓存目录
 │
-├── test_publish.py            # B站发布测试脚本（本地）
-├── test_api_alerts.py         # API告警测试脚本（本地）
-├── manual_publish.py          # 手动发布工具（本地）
-│
 └── .gitignore                 # Git 忽略规则
 ```
 
