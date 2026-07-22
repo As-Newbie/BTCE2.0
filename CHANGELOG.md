@@ -83,3 +83,43 @@ BTCE 各版本详细变更记录。简表见 [README.md](README.md#版本演进)
 ## v1.0 — 初始版本
 
 Playwright 抓取置顶评论 + 邮件/QQ 通知。
+
+---
+
+## 待优化
+
+### rpid 改用 B站公开 API 获取
+
+**现状**（v4.9 fix）：从 Web Component 内部属性 `__data.rpid` 获取，依赖 Playwright 打开的页面。
+
+**方案**：通过 B站公开 API 直接获取，无需登录、无需打开页面。
+
+```python
+# 1. 获取评论线程ID（oid）
+async def get_comment_oid(dynamic_id: str) -> str:
+    url = f"https://api.bilibili.com/x/polymer/web-dynamic/v1/detail?id={dynamic_id}"
+    async with aiohttp.ClientSession() as s:
+        r = await s.get(url)
+        data = await r.json()
+        return data["data"]["item"]["basic"]["comment_id_str"]
+
+# 2. 用 oid 获取置顶评论rpid
+async def get_rpid(dynamic_id: str) -> str | None:
+    oid = await get_comment_oid(dynamic_id)
+    url = f"https://api.bilibili.com/x/v2/reply/wbi/main?oid={oid}&type=11&mode=3"
+    async with aiohttp.ClientSession() as s:
+        r = await s.get(url)
+        data = await r.json()
+        top = data["data"].get("top_replies")
+        return top[0]["rpid_str"] if top else None
+```
+
+**优点**：
+- 不需要 Playwright、不需要 cookies
+- API 响应始终包含 `rpid_str`，与评论是否带 emoji 无关
+- 可并行调用（API 拿 rpid + Playwright 拿文字截图），互不阻塞
+
+**代价**：
+- 需要 WBI 签名（B站 API 防爬机制，已有实现可复用）
+- 多 2 个 HTTP 请求（~1s）
+- 仍需 Playwright 拿评论文字和截图（不能完全替代）
