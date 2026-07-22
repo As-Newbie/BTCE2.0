@@ -63,21 +63,19 @@ class CommentRenderer:
                 if content_element:
                     pinned_comment_html = await content_element.inner_html()
 
-                # rpid：从 bili-rich-text 的 shadow DOM 中 emoji img 的 data-rpid 获取
+                # rpid：从 Web Component 内部数据模型直接获取（避免依赖 emoji 的 data-rpid 属性）
                 try:
                     rpid_raw = await item.evaluate("""(el) => {
-                        const shadow = el.shadowRoot;
-                        if (!shadow) return null;
-                        const comment = shadow.querySelector('bili-comment-renderer#comment');
-                        if (!comment || !comment.shadowRoot) return null;
-                        const richText = comment.shadowRoot.querySelector('bili-rich-text');
-                        if (!richText || !richText.shadowRoot) return null;
-                        const rpidEl = richText.shadowRoot.querySelector('[data-rpid]');
-                        return rpidEl ? rpidEl.getAttribute('data-rpid') : null;
+                        // B站 Web Component 在 __data.rpid 中存储评论ID
+                        // 比 Shadow DOM [data-rpid] 更可靠，纯文字评论也能获取
+                        const data = el.__data;
+                        return data && data.rpid ? String(data.rpid) : null;
                     }""")
                     rpid = rpid_raw
+                    if not rpid:
+                        logger.warning(f"⚠️ 置顶评论 rpid 获取失败（__data.rpid 为空）")
                 except Exception:
-                    pass
+                    logger.warning(f"⚠️ 置顶评论 rpid 提取异常，将跳过 PC 评论直达链接")
 
                 # 评论区上传图片 - 修复图片获取逻辑
                 pics_renderer = await item.query_selector("bili-comment-pictures-renderer")
