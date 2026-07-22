@@ -2,6 +2,21 @@
 
 BTCE 各版本详细变更记录。简表见 [README.md](README.md#版本演进)。
 
+## v4.10 — 直播标题更新同步B站话题 (2026-07)
+
+- **直播标题更新自动发布B站动态**：标题变化时同步发布图文动态到B站话题
+- **动态内容**：封面图 + 新标题 + 更新时间 + 直播间链接 + 房间状态标签（加密/锁定/隐藏/付费/拜年纪）
+- **容错降级**：封面下载/上传失败自动降级为纯文本动态，不阻塞QQ/邮件通知
+- **可配置开关**：`LIVE_BILI_PUBLISH_ENABLED` 独立控制，复用已有话题配置
+- **新增 `auto_publish.py` 函数**：`_download_cover_image()` 下载封面到本地、`publish_live_update()` 完整发布流程
+- **`monitor_scheduler.py` 扩展**：`send_live_notification()` 新增B站动态发布通道，fire-and-forget 不阻塞
+
+### XTong 的贡献
+- **需求与设计**：提出直播标题更新同步B站话题需求，指定动态内容格式（封面+标题+时间+链接+状态标签）
+
+### Claude (AI Assistant) 的贡献
+- **编码实现**：新增 `_download_cover_image()`、`publish_live_update()` 函数；扩展 `monitor_scheduler.py` B站发布通道；容错降级逻辑；文档更新与部署
+
 ## v4.9 — 评论直达链接 (2026-07)
 
 - **评论直达链接**：穿透 B站 Web Component 三层 Shadow DOM 提取 `rpid`（评论ID），B站推送新增 `#reply{rpid}` 直达链接

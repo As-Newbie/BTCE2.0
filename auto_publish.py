@@ -1,16 +1,19 @@
 # auto_publish.py
 """
 B站动态自动发布模块。
-置顶评论变更时上传截图+发布带话题的图文动态，独立于邮件/QQ通知。
+- 置顶评论变更：上传截图+发布带话题的图文动态
+- 直播间标题更新：下载封面图+上传图床+发布带话题的图文动态
 """
 
 import json
 import asyncio
 import time
 import random
+import tempfile
 from typing import Optional
 import aiohttp
 from pathlib import Path
+from datetime import datetime
 from logger_config import logger
 
 
@@ -164,3 +167,123 @@ async def publish_dynamic(dynamic_id: str, screenshot_path: str, cookies: list,
     except Exception as e:
         logger.error(f"❌ 动态发布异常: {e}")
         return False
+
+
+# ------------------------------------------------------------------
+# 直播间标题更新 → B站动态发布
+# ------------------------------------------------------------------
+async def _download_cover_image(url: str) -> Optional[str]:
+    """下载直播间封面图到临时文件，返回临时文件路径，失败返回None"""
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, timeout=30) as resp:
+                if resp.status != 200:
+                    logger.warning(f"⚠️ 封面下载HTTP {resp.status}: {url[:80]}...")
+                    return None
+                data = await resp.read()
+                if not data or len(data) < 100:
+                    logger.warning(f"⚠️ 封面数据过小: {len(data) if data else 0} bytes")
+                    return None
+                # 根据URL推断文件后缀
+                suffix = ".jpg" if ("jpg" in url.lower() or "jpeg" in url.lower()) else ".png"
+                tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix, prefix="btce_cover_")
+                tmp.write(data)
+                tmp.close()
+                logger.info(f"📥 封面下载成功: {tmp.name} ({len(data)} bytes)")
+                return tmp.name
+    except Exception as e:
+        logger.error(f"❌ 封面下载异常: {e}")
+        return None
+
+
+async def publish_live_update(cover_url: str, title: str, room_id: int,
+                               status_tags: str, cookies: list,
+                               topic_id: int, topic_name: str,
+                               up_name: str) -> bool:
+    """
+    发布直播间标题更新到B站动态（封面图+标题+时间+链接+状态标签）。
+    封面下载/上传失败不阻塞，降级为纯文本动态。
+    返回True表示发布成功，False表示失败。
+    """
+    csrf = _csrf_from_cookies(cookies)
+    if not csrf:
+        logger.error("❌ live_publish: 未找到bili_jct cookie，无法发布")
+        return False
+    cookie_str = _cookie_header(cookies)
+
+    # 1) 下载封面图并上传到B站图床
+    img = None
+    tmp_path = None
+    if cover_url:
+        tmp_path = await _download_cover_image(cover_url)
+        if tmp_path:
+            img = await upload_image(tmp_path, cookies)
+            if not img:
+                logger.warning("⚠️ live_publish: 封面上传失败，改为纯文本发布")
+        else:
+            logger.warning("⚠️ live_publish: 封面下载失败，改为纯文本发布")
+
+    # 2) 组装动态内容
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    link_url = f"https://live.bilibili.com/{room_id}"
+
+    contents = [
+        {"raw_text": f"【{up_name}】直播间标题更新！", "type": 1, "biz_id": ""},
+        {"raw_text": f"\n✏️ 新标题：{title}", "type": 1, "biz_id": ""},
+        {"raw_text": f"\n⏰ 更新时间：{current_time}", "type": 1, "biz_id": ""},
+        {"raw_text": f"\n🔗 {link_url}", "type": 1, "biz_id": ""},
+    ]
+    if status_tags:
+        contents.append({"raw_text": f"\n⚠️ 房间状态：{status_tags}", "type": 1, "biz_id": ""})
+
+    # 3) 发布动态
+    mid = _mid_from_cookies(cookies)
+    upload_id = f"{mid}_{int(time.time())}_{random.randint(1000, 9999)}"
+
+    body = {
+        "dyn_req": {
+            "scene": 2,
+            "content": {"contents": contents},
+            "pics": [img] if img else [],
+            "topic": {
+                "id": topic_id,
+                "name": topic_name,
+                "from_source": "dyn.web.list",
+                "from_topic_id": 0,
+            },
+            "option": {"up_choose_comment": 0, "close_comment": 0},
+            "meta": {"app_meta": {"from": "create.dynamic.web", "mobi_app": "web"}},
+            "upload_id": upload_id,
+        }
+    }
+
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            "Content-Type": "application/json",
+            "Referer": "https://t.bilibili.com/",
+            "Origin": "https://t.bilibili.com",
+            "Cookie": cookie_str,
+        }
+
+        async with aiohttp.ClientSession() as session:
+            url = f"{BILI_PUBLISH_URL}?csrf={csrf}&platform=web"
+            async with session.post(url, json=body, headers=headers, timeout=30) as resp:
+                result = await resp.json()
+                if result.get("code") == 0:
+                    dyn_id = result.get("data", {}).get("dyn_id_str", "?")
+                    logger.info(f"✅ 直播动态发布成功: https://t.bilibili.com/{dyn_id}")
+                    return True
+                else:
+                    logger.error(f"❌ 直播动态发布失败: code={result.get('code')} msg={result.get('message')}")
+                    return False
+    except Exception as e:
+        logger.error(f"❌ 直播动态发布异常: {e}")
+        return False
+    finally:
+        # 清理临时封面文件
+        if tmp_path:
+            try:
+                Path(tmp_path).unlink(missing_ok=True)
+            except Exception:
+                pass

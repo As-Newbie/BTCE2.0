@@ -102,6 +102,9 @@ AUTO_PUBLISH_ENABLED = True  # 置顶评论变更时自动发布B站动态（含
 AUTO_PUBLISH_TOPIC_ID = 66066  # 话题ID（小星星的家）
 AUTO_PUBLISH_TOPIC_NAME = "小星星的家"  # 话题名称
 
+# ===== 直播B站发布配置 =====
+LIVE_BILI_PUBLISH_ENABLED = True  # 直播间标题更新时自动发布B站动态（封面+标题+时间+链接+状态标签）
+
 # ===== 动态链接配置 =====
 try:
     from dynamic import DYNAMIC_URLS

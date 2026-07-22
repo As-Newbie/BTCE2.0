@@ -1,13 +1,17 @@
 # monitor_scheduler.py
 import asyncio
+import json
 import time
 from datetime import datetime
 from logger_config import logger
 from live_monitor import live_monitor
-from config import LIVE_ROOM_ID, LIVE_CHECK_INTERVAL
+from config import (LIVE_ROOM_ID, LIVE_CHECK_INTERVAL, COOKIE_FILE, UP_NAME,
+                    AUTO_PUBLISH_TOPIC_ID, AUTO_PUBLISH_TOPIC_NAME,
+                    LIVE_BILI_PUBLISH_ENABLED)
 from email_utils import send_email
 from qq_utils import send_qq_message
 from config_email import TO_EMAILS, STATUS_MONITOR_EMAILS
+import auto_publish
 
 
 class LiveMonitorScheduler:
@@ -18,6 +22,19 @@ class LiveMonitorScheduler:
         self.is_running = False
         self.last_successful_check = None
         self.check_count = 0
+
+    @staticmethod
+    def _load_cookies_list() -> list:
+        """从cookie文件加载Playwright格式的cookie列表，供auto_publish使用"""
+        try:
+            if not COOKIE_FILE.exists():
+                logger.warning("⚠️ Cookie文件不存在，无法发布B站动态")
+                return []
+            with open(COOKIE_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"❌ 加载Cookie失败: {e}")
+            return []
 
     async def start_monitoring(self):
         """开始监控直播间"""
@@ -71,7 +88,7 @@ class LiveMonitorScheduler:
             self.logger.error(f"❌❌ 执行直播检查异常: {e}")
 
     async def send_live_notification(self, live_info: dict):
-        """发送直播状态变化通知"""
+        """发送直播状态变化通知（邮件+QQ+B站动态）"""
         try:
             # 生成邮件内容
             subject, email_content = live_monitor.format_email_content(live_info)
@@ -96,6 +113,28 @@ class LiveMonitorScheduler:
             qq_success_count = sum(1 for r in qq_results if r is True)
             if qq_results:
                 self.logger.info(f"✅ QQ直播通知发送结果: {qq_success_count}/{len(qq_results)} 成功")
+
+            # ── B站动态发布：标题更新时同步到话题 ──
+            if (LIVE_BILI_PUBLISH_ENABLED
+                    and live_info.get("change_type") == "title_change"):
+                cookies = self._load_cookies_list()
+                if cookies:
+                    status_tags = live_monitor._build_status_tags(live_info) or ""
+                    asyncio.create_task(
+                        auto_publish.publish_live_update(
+                            cover_url=live_info.get("cover", ""),
+                            title=live_info.get("title", "无标题"),
+                            room_id=live_info["room_id"],
+                            status_tags=status_tags,
+                            cookies=cookies,
+                            topic_id=AUTO_PUBLISH_TOPIC_ID,
+                            topic_name=AUTO_PUBLISH_TOPIC_NAME,
+                            up_name=UP_NAME,
+                        )
+                    )
+                    self.logger.info("📤 直播标题更新B站动态已提交")
+                else:
+                    self.logger.warning("⚠️ 无Cookie，跳过B站直播动态发布")
 
         except Exception as e:
             self.logger.error(f"❌❌❌❌ 发送直播通知异常: {e}")
