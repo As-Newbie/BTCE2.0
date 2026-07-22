@@ -10,7 +10,7 @@ class QQMessageGenerator:
                             current_images: list, screenshot_path: str = None) -> str:
         """生成QQ群推送消息（优先用截图，失败兜底文字+表情+评论区图片）"""
         try:
-            qq_message = f"【{up_name}】瞳瞳空间更新啦~\n"
+            qq_message = f"【{up_name}】置顶评论更新\n"
 
             if screenshot_path:
                 # 截图模式：只用截图替换文字+表情+评论区图片
@@ -68,7 +68,7 @@ class QQMessageGenerator:
             text_content = soup.get_text(strip=True)
 
             # 生成降级消息
-            degraded_message = f"【{up_name}】瞳瞳空间更新啦~\n"
+            degraded_message = f"【{up_name}】置顶评论更新\n"
             degraded_message += f"{text_content}\n"
 
             # 添加图片提示（不含CQ码）
@@ -95,7 +95,7 @@ class QQMessageGenerator:
 
     def generate_new_dynamic_qq_message(self, up_name: str, dynamic_id: str, dynamic_url: str, current_time: str, content_text: str = "") -> str:
         """生成新动态 QQ 群推送消息"""
-        msg = f"【{up_name}】瞳瞳空间发布了新动态~\n"
+        msg = f"【{up_name}】发布了新动态~\n"
         if content_text:
             msg += f"内容：{content_text[:300]}\n"
         msg += f"🔗 链接：{dynamic_url}\n"

@@ -31,7 +31,7 @@ LIVE_FAILURE_THRESHOLD = 10  # 连续失败阈值（P1告警）
 LIVE_SUCCESS_RATE_THRESHOLD = 0.9  # 成功率阈值（P2告警）
 
 # ===== 动态监控配置 =====
-UP_NAME = "星瞳_Official"  # 监控目标昵称
+UP_NAME = ""  # 监控目标昵称（需自行配置）
 UP_UID = "401315430"  # 监控目标B站UID
 PINNED_DYNAMIC_ID = "1208161183564038147"  # 置顶动态ID（手动配置）
 CHECK_INTERVAL = 6  # v4.8：页面复用后缩短检查间隔（原8s）

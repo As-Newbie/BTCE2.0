@@ -119,7 +119,7 @@ async def publish_dynamic(dynamic_id: str, screenshot_path: str, cookies: list,
     upload_id = f"{mid}_{int(time.time())}_{random.randint(1000, 9999)}"
 
     contents = [
-        {"raw_text": f"【{up_name}】瞳瞳空间更新啦~", "type": 1, "biz_id": ""},
+        {"raw_text": f"【{up_name}】置顶评论更新~", "type": 1, "biz_id": ""},
     ]
     if rpid:
         contents.append({"raw_text": f"\n💻跳转链接 {reply_url}", "type": 1, "biz_id": ""})

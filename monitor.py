@@ -403,7 +403,7 @@ class Monitor:
             fp = os.path.join(self.mail_save_dir, f"{UP_NAME}-{ts}.html")
             Path(self.mail_save_dir).mkdir(parents=True, exist_ok=True)
             with open(fp, "w", encoding="utf-8") as f: f.write(body)
-            asyncio.create_task(asyncio.to_thread(send_email, subject=f"【{UP_NAME}】瞳瞳空间更新啦", content=body))
+            asyncio.create_task(asyncio.to_thread(send_email, subject=f"【{UP_NAME}】置顶评论更新", content=body))
             logger.info(f"📧 置顶评论邮件已提交 (模式={EMAIL_MODE})")
 
             # ── 3) B站发布 ──
