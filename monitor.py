@@ -411,10 +411,24 @@ class Monitor:
                 if not screenshot_path:
                     screenshot_path = await self._take_pinned_comment_screenshot(dynamic_id)
                 if screenshot_path:
+                    # 提取置顶评论纯文本（与QQ推送一致：img替换为alt文本）
+                    try:
+                        from bs4 import BeautifulSoup
+                        soup = BeautifulSoup(cur_html, "html.parser")
+                        for img in soup.find_all("img"):
+                            alt = img.get("alt", "")
+                            if alt:
+                                img.replace_with(alt)
+                            else:
+                                img.decompose()
+                        comment_plain = soup.get_text(strip=True)
+                    except Exception:
+                        comment_plain = ""
                     asyncio.create_task(
                         auto_publish.publish_dynamic(dynamic_id, screenshot_path,
                                                      await self.context.cookies(),
-                                                     UP_NAME, AUTO_PUBLISH_TOPIC_ID, AUTO_PUBLISH_TOPIC_NAME, rpid)
+                                                     UP_NAME, AUTO_PUBLISH_TOPIC_ID, AUTO_PUBLISH_TOPIC_NAME, rpid,
+                                                     comment_text=comment_plain)
                     )
                     logger.info("📤 自动发布动态已提交")
         except Exception as e:

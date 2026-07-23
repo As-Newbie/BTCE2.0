@@ -2,6 +2,19 @@
 
 BTCE 各版本详细变更记录。简表见 [README.md](README.md#版本演进)。
 
+## v4.11 — B站发布附加评论纯文本+去重标记 (2026-07)
+
+- **动态末尾附加评论纯文本**：B站置顶评论更新动态自动附上评论纯文本（与QQ推送一致：emoji img替换为alt文字）
+- **MD5去重标记**：`MD5(评论文本+时间戳)` 取前16位追加到动态末尾，避免B站判重拦截
+- **仅影响置顶评论发布**：`publish_dynamic()` 新增 `comment_text` 参数，直播间标题发布 (`publish_live_update`) 不变
+- **monitor.py 联动**：`_send_notification()` 从 `cur_html` 提取纯文本，传入B站发布流程
+
+### XTong 的贡献
+- **需求与设计**：提出B站动态附加评论纯文本+MD5去重标记需求
+
+### Claude (AI Assistant) 的贡献
+- **编码实现**：`publish_dynamic()` 新增 `comment_text` 参数与MD5去重逻辑；`monitor.py` 纯文本提取与传递；文档更新与部署
+
 ## v4.10 — 直播标题更新同步B站话题 (2026-07)
 
 - **直播标题更新自动发布B站动态**：标题变化时同步发布图文动态到B站话题

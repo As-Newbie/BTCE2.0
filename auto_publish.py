@@ -9,6 +9,7 @@ import json
 import asyncio
 import time
 import random
+import hashlib
 import tempfile
 from typing import Optional
 import aiohttp
@@ -95,7 +96,8 @@ async def upload_image(file_path: str, cookies: list) -> Optional[dict]:
 
 
 async def publish_dynamic(dynamic_id: str, screenshot_path: str, cookies: list,
-                          up_name: str, topic_id: int, topic_name: str, rpid: str = None) -> bool:
+                          up_name: str, topic_id: int, topic_name: str, rpid: str = None,
+                          comment_text: str = None) -> bool:
     """
     发布B站动态（图文+话题+超链接）。
     返回True表示发布成功，False表示失败。
@@ -124,6 +126,11 @@ async def publish_dynamic(dynamic_id: str, screenshot_path: str, cookies: list,
     if rpid:
         contents.append({"raw_text": f"\n💻跳转链接 {reply_url}", "type": 1, "biz_id": ""})
     contents.append({"raw_text": f"\n📱跳转链接 {link_url}", "type": 1, "biz_id": ""})
+    if comment_text:
+        # 生成短哈希作为去重标记（评论文本+时间戳 → MD5前16位）
+        hash_src = f"{comment_text}{time.time()}"
+        short_hash = hashlib.md5(hash_src.encode()).hexdigest()[:16]
+        contents.append({"raw_text": f"\n\n置顶评论：{comment_text}\n——{short_hash}", "type": 1, "biz_id": ""})
 
     body = {
         "dyn_req": {
