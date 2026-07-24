@@ -234,10 +234,6 @@ class Monitor:
                     logger.warning(f"⚠️ 截图失败: {e}")
 
             email_body = self.comment_renderer.render_new_dynamics_batch_email(up_name, new_dynamics, current_time)
-            ts = time.strftime("%Y%m%d%H%M%S")
-            fpath = os.path.join(self.mail_save_dir, f"new_batch_{up_name}-{ts}.html")
-            Path(self.mail_save_dir).mkdir(parents=True, exist_ok=True)
-            with open(fpath, "w", encoding="utf-8") as f: f.write(email_body)
             asyncio.create_task(asyncio.to_thread(send_email, subject=f"【{up_name}】发布了 {len(new_dynamics)} 条新动态", content=email_body))
             logger.info("📧 新动态邮件已提交")
 
@@ -399,10 +395,6 @@ class Monitor:
                 email_sp = None  # text模式：文字+表情+评论区图片
 
             body = self.comment_renderer.render_email_content(dynamic_id, cur_html, cur_img, last_html, last_img, ct, email_sp)
-            ts = time.strftime("%Y%m%d%H%M%S")
-            fp = os.path.join(self.mail_save_dir, f"{UP_NAME}-{ts}.html")
-            Path(self.mail_save_dir).mkdir(parents=True, exist_ok=True)
-            with open(fp, "w", encoding="utf-8") as f: f.write(body)
             asyncio.create_task(asyncio.to_thread(send_email, subject=f"【{UP_NAME}】置顶评论更新", content=body))
             logger.info(f"📧 置顶评论邮件已提交 (模式={EMAIL_MODE})")
 

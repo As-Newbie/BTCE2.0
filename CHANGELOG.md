@@ -2,6 +2,18 @@
 
 BTCE 各版本详细变更记录。简表见 [README.md](README.md#版本演进)。
 
+## v4.12 — 邮件HTML统一备份 (2026-07)
+
+- **`send_email()` 内统一备份**：所有邮件发送前自动保存HTML到 `sent_emails/` 目录，覆盖此前遗漏的直播通知和告警邮件
+- **移除冗余保存点**：`monitor.py` 中新动态批量通知和置顶评论更新两处手动写文件移除，统一走 `send_email()` 备份
+- **备份格式**：`sent_emails/{YYYYMMDD_HHMMSS}_{主题}.html`，SMTP发送前写入确保即使发送失败也有留档
+
+### XTong 的贡献
+- **需求与设计**：提出邮件备份需求，便于后续数据分析
+
+### Claude (AI Assistant) 的贡献
+- **编码实现**：`email_utils.py` 新增 `_save_email_backup()` 函数；`monitor.py` 冗余保存点清理；文档更新与部署
+
 ## v4.11 — B站发布附加评论纯文本+去重标记 (2026-07)
 
 - **动态末尾附加评论纯文本**：B站置顶评论更新动态自动附上评论纯文本（与QQ推送一致：emoji img替换为alt文字）
