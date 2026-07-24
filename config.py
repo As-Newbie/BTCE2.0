@@ -105,6 +105,14 @@ AUTO_PUBLISH_TOPIC_NAME = "小星星的家"  # 话题名称
 # ===== 直播B站发布配置 =====
 LIVE_BILI_PUBLISH_ENABLED = True  # 直播间标题更新时自动发布B站动态（封面+标题+时间+链接+状态标签）
 
+# ===== 动态类型过滤 =====
+# B站会自动生成一些"非用户主动发布"的动态类型，监测到后跳过不推送
+# DYNAMIC_TYPE_LIVE_RCMD：开播后B站自动生成的直播推荐动态（下播后自动消失）
+# 完整类型列表参考：https://github.com/SocialSisterYi/bilibili-API-collect
+DYNAMIC_SKIP_TYPES = {
+    "DYNAMIC_TYPE_LIVE_RCMD",  # 直播开播自动动态（下播消失）
+}
+
 # ===== 动态链接配置 =====
 try:
     from dynamic import DYNAMIC_URLS

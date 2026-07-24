@@ -12,7 +12,8 @@ from config import (
     MAIL_SAVE_DIR, UP_NAME, PINNED_DYNAMIC_ID, BROWSER_CONFIG, BROWSER_RESTART_INTERVAL,
     P1_TOTAL_FAILURE_THRESHOLD, P2_SUCCESS_RATE_THRESHOLD,
     AUTO_PUBLISH_ENABLED, AUTO_PUBLISH_TOPIC_ID, AUTO_PUBLISH_TOPIC_NAME,
-    QQ_MODE, EMAIL_MODE, BILI_MODE
+    QQ_MODE, EMAIL_MODE, BILI_MODE,
+    DYNAMIC_SKIP_TYPES
 )
 from render_comment import CommentRenderer
 from email_utils import send_email
@@ -464,17 +465,25 @@ class Monitor:
                     seen = set(self.history_data.get("seen_dynamics", []))
                     is_cold = len(seen) == 0
                     new_dynamics = []
+                    skipped_count = 0
                     for d in api_list:
                         dyn_id = d["dynamic_id"]
+                        dyn_type = d.get("type", "")
                         if dyn_id not in seen:
                             seen.add(dyn_id)
+                            # 过滤B站自动生成的动态（如直播开播推荐动态，下播后自动消失）
+                            if dyn_type in DYNAMIC_SKIP_TYPES:
+                                skipped_count += 1
+                                continue
                             if not is_cold:
                                 new_dynamics.append({"dynamic_id": dyn_id, "url": f"https://t.bilibili.com/{dyn_id}"})
+                    if skipped_count:
+                        logger.info(f"⏭️ 跳过 {skipped_count} 条自动生成动态（类型: {DYNAMIC_SKIP_TYPES}）")
                     if new_dynamics:
                         logger.info(f"🆕 检测到 {len(new_dynamics)} 条新动态")
                         await self._handle_new_dynamics_batch(new_dynamics, name)
                     if is_cold and seen:
-                        logger.info(f"🧊 冷启动：静默记录 {len(seen)} 条")
+                        logger.info(f"🧊 冷启动：静默记录 {len(seen)} 条（已过滤 {skipped_count} 条自动动态）")
                     self.history_data["seen_dynamics"] = list(seen)[-500:]
 
             self._save_history()
