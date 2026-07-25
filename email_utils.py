@@ -38,12 +38,20 @@ def send_email(subject: str, content: str, to_emails: list = None) -> bool:
     # 保存邮件备份（SMTP发送前，确保即使发送失败也有备份）
     _save_email_backup(subject, content)
 
-    # 处理 HTML 中相对 URL
+    # 处理 HTML 中图片 URL：补全协议头 + 剥掉B站CDN处理后缀
     soup = BeautifulSoup(content, "html.parser")
     for img in soup.find_all("img"):
         src = img.get("src", "")
+        if not src:
+            continue
+        # 补全协议头：// → https://
         if src.startswith("//"):
-            img["src"] = "https:" + src
+            src = "https:" + src
+        # 剥掉 B站 CDN 图片处理后缀（如 @100w_100h.avif）
+        # 否则 CDN 返回 AVIF/WebP 格式，手机邮箱客户端无法渲染
+        if 'hdslb.com' in src:
+            src = re.sub(r'@[^/?#]+', '', src)
+        img["src"] = src
 
     content_fixed = str(soup)
 
