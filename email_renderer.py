@@ -1,6 +1,6 @@
 # email_renderer.py
 import time
-from config import UP_NAME
+from config import UP_NAME, EMAIL_HEADER_TITLE
 from logger_config import logger
 
 
@@ -60,7 +60,7 @@ class EmailRenderer:
             <html>
             <head>
                 <meta charset="UTF-8">
-                <title>{UP_NAME} 动态置顶评论更新通知</title>
+                <title>{UP_NAME} {EMAIL_HEADER_TITLE}</title>
 
                 <style>
 
@@ -357,7 +357,7 @@ class EmailRenderer:
             <body>
                 <div class="container">
                     <div class="header">
-                        <h1>{UP_NAME} 动态置顶评论更新通知</h1>
+                        <h1>{UP_NAME} {EMAIL_HEADER_TITLE}</h1>
                         <div class="header-gradient-bar"></div>
                     </div>
 

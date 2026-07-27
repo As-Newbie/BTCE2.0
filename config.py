@@ -146,6 +146,11 @@ QQ_SINGLE_TIME_LABEL = "📅"
 QQ_BATCH_LINK_LABEL = "🔗"
 QQ_BATCH_TIME_LABEL = "📅"
 EMAIL_PINNED_SUBJECT = "置顶评论更新"
+QQ_PINNED_UPDATE_TEXT = "置顶评论更新"       # QQ消息置顶评论标题
+BILI_PUBLISH_TEXT = "置顶评论更新~"          # B站发布动态正文
+BILI_PC_LINK_LABEL = "电脑链接"             # B站发布PC跳转链接文字
+BILI_MOBILE_LINK_LABEL = "手机链接"         # B站发布手机跳转链接文字
+EMAIL_HEADER_TITLE = "动态置顶评论更新通知"   # 置顶评论邮件标题
 
 try:
     from config_custom import *  # noqa: F403 覆盖上方所有默认值

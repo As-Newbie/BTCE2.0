@@ -10,10 +10,17 @@
 # CHECK_INTERVAL = 4  # 如果要改检查间隔
 
 # ---- QQ推送文案个性化 ----
-# QQ_SINGLE_LINK_LABEL = "动态链接"    # 单条通知链接前缀（默认: 🔗）
-# QQ_SINGLE_TIME_LABEL = "检测时间"    # 单条通知时间前缀（默认: 📅）
-# QQ_BATCH_LINK_LABEL = "动态链接"    # 批量通知链接前缀（默认: 🔗）
-# QQ_BATCH_TIME_LABEL = "监测时间"    # 批量通知时间前缀（默认: 📅）
+# QQ_SINGLE_LINK_LABEL = "动态链接"
+# QQ_SINGLE_TIME_LABEL = "检测时间"
+# QQ_BATCH_LINK_LABEL = "动态链接"
+# QQ_BATCH_TIME_LABEL = "监测时间"
+# QQ_PINNED_UPDATE_TEXT = "置顶评论更新"
 
 # ---- 邮件标题个性化 ----
-# EMAIL_PINNED_SUBJECT = "置顶评论更新"  # 邮件主题格式: 【UP_NAME】{此值}
+# EMAIL_PINNED_SUBJECT = "置顶评论更新"
+# EMAIL_HEADER_TITLE = "动态置顶评论更新通知"
+
+# ---- B站发布文案个性化 ----
+# BILI_PUBLISH_TEXT = "置顶评论更新~"
+# BILI_PC_LINK_LABEL = "电脑链接"
+# BILI_MOBILE_LINK_LABEL = "手机链接"

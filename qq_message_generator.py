@@ -1,6 +1,7 @@
 # qq_message_generator.py
 from bs4 import BeautifulSoup
 from logger_config import logger
+from config import QQ_PINNED_UPDATE_TEXT
 
 
 class QQMessageGenerator:
@@ -10,7 +11,7 @@ class QQMessageGenerator:
                             current_images: list, screenshot_path: str = None) -> str:
         """生成QQ群推送消息（优先用截图，失败兜底文字+表情+评论区图片）"""
         try:
-            qq_message = f"【{up_name}】置顶评论更新\n"
+            qq_message = f"【{up_name}】{QQ_PINNED_UPDATE_TEXT}\n"
 
             if screenshot_path:
                 # 截图模式：只用截图替换文字+表情+评论区图片
@@ -68,7 +69,7 @@ class QQMessageGenerator:
             text_content = soup.get_text(strip=True)
 
             # 生成降级消息
-            degraded_message = f"【{up_name}】置顶评论更新\n"
+            degraded_message = f"【{up_name}】{QQ_PINNED_UPDATE_TEXT}\n"
             degraded_message += f"{text_content}\n"
 
             # 添加图片提示（不含CQ码）

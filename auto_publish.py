@@ -8,6 +8,7 @@ B站动态自动发布模块。
 import json
 import asyncio
 import time
+from config import BILI_PUBLISH_TEXT, BILI_PC_LINK_LABEL, BILI_MOBILE_LINK_LABEL
 import random
 import hashlib
 import tempfile
@@ -121,11 +122,11 @@ async def publish_dynamic(dynamic_id: str, screenshot_path: str, cookies: list,
     upload_id = f"{mid}_{int(time.time())}_{random.randint(1000, 9999)}"
 
     contents = [
-        {"raw_text": f"【{up_name}】置顶评论更新~", "type": 1, "biz_id": ""},
+        {"raw_text": f"【{up_name}】{BILI_PUBLISH_TEXT}", "type": 1, "biz_id": ""},
     ]
     if rpid:
-        contents.append({"raw_text": f"\n💻跳转链接 {reply_url}", "type": 1, "biz_id": ""})
-    contents.append({"raw_text": f"\n📱跳转链接 {link_url}", "type": 1, "biz_id": ""})
+        contents.append({"raw_text": f"\n{BILI_PC_LINK_LABEL} {reply_url}", "type": 1, "biz_id": ""})
+    contents.append({"raw_text": f"\n{BILI_MOBILE_LINK_LABEL} {link_url}", "type": 1, "biz_id": ""})
     if comment_text:
         # 生成短哈希作为去重标记（评论文本+时间戳 → MD5前16位）
         hash_src = f"{comment_text}{time.time()}"
