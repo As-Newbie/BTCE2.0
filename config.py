@@ -138,16 +138,16 @@ from config_email import SMTP_SERVER, SMTP_PORT, EMAIL_USER, EMAIL_PASSWORD, TO_
 # 直接从独立的配置文件导入，不设置默认值
 from config_qq import QQ_GROUP_IDS, QQ_PUSH_ENABLED
 
-# ===== 个性化文案配置（config_custom.py 不存在则用通用默认值）=====
+# ===== 个性化覆盖（config_custom.py 不存在则用上方默认值）=====
+# 任何变量在 config_custom.py 中定义后都会覆盖这里的默认值（包括配置值和文案）
+# config_custom.py 已加入 .gitignore，不会被 Git 提交也不会被部署覆盖
+QQ_SINGLE_LINK_LABEL = "🔗"
+QQ_SINGLE_TIME_LABEL = "📅"
+QQ_BATCH_LINK_LABEL = "🔗"
+QQ_BATCH_TIME_LABEL = "📅"
+EMAIL_PINNED_SUBJECT = "置顶评论更新"
+
 try:
-    from config_custom import (
-        QQ_SINGLE_LINK_LABEL, QQ_SINGLE_TIME_LABEL,
-        QQ_BATCH_LINK_LABEL, QQ_BATCH_TIME_LABEL,
-        EMAIL_PINNED_SUBJECT,
-    )
+    from config_custom import *  # noqa: F403 覆盖上方所有默认值
 except ImportError:
-    QQ_SINGLE_LINK_LABEL = "🔗"
-    QQ_SINGLE_TIME_LABEL = "📅"
-    QQ_BATCH_LINK_LABEL = "🔗"
-    QQ_BATCH_TIME_LABEL = "📅"
-    EMAIL_PINNED_SUBJECT = "置顶评论更新"
+    pass
