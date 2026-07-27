@@ -36,6 +36,23 @@ from color_config import ColorConfig
 import auto_publish
 
 
+def _update_config_pinned_id(new_id: str):
+    """同步写入 config.py 的 PINNED_DYNAMIC_ID（正则替换，不破坏其他内容）"""
+    try:
+        config_path = Path(__file__).parent / "config.py"
+        content = config_path.read_text(encoding="utf-8")
+        new_content = re.sub(
+            r'PINNED_DYNAMIC_ID\s*=\s*"[^"]*"',
+            f'PINNED_DYNAMIC_ID = "{new_id}"',
+            content
+        )
+        if new_content != content:
+            config_path.write_text(new_content, encoding="utf-8")
+            logger.info(f"📝 config.py PINNED_DYNAMIC_ID 已更新为 {new_id}")
+    except Exception as e:
+        logger.warning(f"⚠️ config.py PINNED_DYNAMIC_ID 更新失败: {e}")
+
+
 class Monitor:
     """动态置顶评论监控类"""
 
@@ -44,7 +61,22 @@ class Monitor:
         self.cookie_file = COOKIE_FILE
         self.history_file = HISTORY_FILE
         self.mail_save_dir = MAIL_SAVE_DIR
-        self.pinned_dynamic_id = PINNED_DYNAMIC_ID
+        # 如果 config 中为空，尝试从 state 文件恢复（重启后兜底）
+        if PINNED_DYNAMIC_ID:
+            self.pinned_dynamic_id = PINNED_DYNAMIC_ID
+        else:
+            try:
+                state_file = Path(__file__).parent / "pinned_dynamic_state.json"
+                if state_file.exists():
+                    state = json.loads(state_file.read_text(encoding="utf-8"))
+                    self.pinned_dynamic_id = state.get("pinned_dynamic_id", "")
+                    if self.pinned_dynamic_id:
+                        logger.info(f"📎 从 state 文件恢复置顶ID: {self.pinned_dynamic_id}")
+            except Exception:
+                self.pinned_dynamic_id = ""
+        # 确保不是 None
+        if not self.pinned_dynamic_id:
+            self.pinned_dynamic_id = ""
         self.status_monitor = None
         self.comment_renderer = CommentRenderer()
         self.health_checker = HealthChecker()
@@ -555,6 +587,8 @@ class Monitor:
                         # 先更新监控目标，让后续检测立即用新置顶
                         self.pinned_dynamic_id = pr["current_id"]
                         self.history_data["last_pinned_dynamic_id"] = None
+                        # 同步写入 config.py，持久化到文件（重启不丢失）
+                        _update_config_pinned_id(pr["current_id"])
                         logger.info(f"📌 置顶已更换: {pr['previous_id']} -> {pr['current_id']}")
 
                         # 截图新置顶动态，内嵌base64到邮件
