@@ -93,14 +93,16 @@ python get_cookies.py
 
 ### 3. 配置
 ```bash
-cp config_email.example.py config_email.py
-cp config_qq.example.py config_qq.py
+cp config_email.example.py config_email.py      # SMTP + 收件人
+cp config_qq.example.py config_qq.py            # QQ 群号 + 机器人
+cp config_custom.example.py config_custom.py    # 个性化文案（可选，不填用通用默认）
 ```
-编辑配置文件，填入真实 SMTP 和 QQ 机器人信息。
+编辑配置文件，填入真实信息。
 
 在 `config.py` 中设置：
-- `UP_NAME` / `UP_UID`：监控的 UP 主
-- `PINNED_DYNAMIC_ID`：要监测评论的置顶动态 ID
+- `UP_UID`：监控的 UP 主 UID
+- 其他配置项见下方配置说明表
+- **个性化文案**：复制 `config_custom.example.py` → `config_custom.py` 后修改，自动覆盖 `config.py` 默认值（gitignored，不会被部署覆盖）
 
 ### 4. 运行
 ```bash
@@ -117,9 +119,12 @@ pm2 start main.py --name bili-monitor --interpreter python3
 | 配置项 | 位置 | 说明 |
 |--------|------|------|
 | 监控目标 | `dynamic.py` `MONITOR_LIST` | UID + 名称 |
-| 置顶动态 ID | `config.py` `PINNED_DYNAMIC_ID` | 手动配置，换置顶时修改 |
+| 置顶动态 ID | `config.py` `PINNED_DYNAMIC_ID` | v4.14起API自动识别，也可手动指定 |
+| 置顶更换检测间隔 | `config.py` `PINNED_CHECK_INTERVAL` | 默认 3600s（1小时） |
+| 动态类型过滤 | `config.py` `DYNAMIC_SKIP_TYPES` | 排除自动生成的动态类型（v4.13） |
+| 检查间隔 | `config.py` `CHECK_INTERVAL` | 默认 6 秒 |
 | 推送模式 | `config.py` `QQ_MODE`/`EMAIL_MODE`/`BILI_MODE` | text=文字+图片, screenshot=截图 |
-| 检查间隔 | `config.py` `CHECK_INTERVAL` | 默认 6 秒（v4.8页面复用优化后缩短） |
+| 个性化文案 | `config_custom.py` | 覆盖通用默认值（QQ消息/邮件标题等），gitignored |
 | 邮箱 | `config_email.py` | SMTP + 收发人 |
 | QQ 推送 | `config_qq.py` | 机器人 API + 群号 |
 | 浏览器参数 | `config.py` `BROWSER_CONFIG` | headless 模式 |
@@ -127,8 +132,8 @@ pm2 start main.py --name bili-monitor --interpreter python3
 ## 注意事项
 
 - Cookie 约 7 天失效，需定期更新
-- 置顶动态更换时需手动更新 `PINNED_DYNAMIC_ID`
-- 请勿将 `config_email.py`、`config_qq.py`、`cookies.json` 提交到公开仓库
+- v4.14 起置顶动态 API 自动发现，无需手动更新 `PINNED_DYNAMIC_ID`
+- 请勿将 `config_email.py`、`config_qq.py`、`config_custom.py`、`cookies.json` 提交到公开仓库
 
 ## 免责声明
 
