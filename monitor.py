@@ -72,6 +72,7 @@ class Monitor:
                     self.pinned_dynamic_id = state.get("pinned_dynamic_id", "")
                     if self.pinned_dynamic_id:
                         logger.info(f"📎 从 state 文件恢复置顶ID: {self.pinned_dynamic_id}")
+                        _update_config_pinned_id(self.pinned_dynamic_id)  # 同步写入config.py
             except Exception:
                 self.pinned_dynamic_id = ""
         # 确保不是 None
