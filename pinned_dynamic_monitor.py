@@ -1,6 +1,6 @@
 # pinned_dynamic_monitor.py
-# 通过 API 自动发现置顶动态，监测置顶更换并邮件通知管理邮箱
-# 可独立运行，也可被 monitor.py 导入调用
+# 通过 API 自动发现置顶动态，检测置顶是否更换
+# 纯检测模块：不发送邮件、不截图，只返回变更信息，由调用方（monitor.py）处理通知
 import json
 import time
 import asyncio
@@ -8,8 +8,6 @@ from pathlib import Path
 from typing import Optional
 
 from config import UP_UID, UP_NAME, COOKIE_FILE
-from config_email import STATUS_MONITOR_EMAILS
-from email_utils import send_email
 from logger_config import logger
 
 STATE_FILE = Path(__file__).parent / "pinned_dynamic_state.json"
@@ -40,111 +38,26 @@ def _find_pinned(raw_items: list[dict]) -> Optional[dict]:
     return None
 
 
-def _extract_info(item: dict) -> dict:
-    """从一条 raw item 中提取置顶通知所需的关键信息"""
-    modules = item.get("modules", {})
-    author = modules.get("module_author", {})
-    mod_dyn = modules.get("module_dynamic", {})
-    mod_stat = modules.get("module_stat", {})
-
-    # 文本内容
-    desc = mod_dyn.get("desc")
-    text = (desc.get("text", "") if desc else "")[:200]
-
-    # 图片列表
-    major = mod_dyn.get("major") or {}
-    draw = major.get("draw") or {}
-    images = [di.get("src", "") for di in draw.get("items", [])]
-
-    # 动态类型
-    dyn_type = item.get("type", "")
-
-    # 发布时间
-    pub_ts_str = author.get("pub_ts", "")
-    pub_time_label = author.get("pub_time", "")
-
-    return {
-        "dynamic_id": item.get("id_str", ""),
-        "type": dyn_type,
-        "text": text,
-        "images": images,
-        "pub_ts": pub_ts_str,
-        "pub_time": pub_time_label,
-        "like_count": mod_stat.get("like", {}).get("count", 0),
-        "comment_count": mod_stat.get("comment", {}).get("count", 0),
-    }
-
-
-def _build_email_html(info: dict, is_new: bool, previous_info: Optional[dict] = None) -> str:
-    """生成置顶动态变更通知的 HTML 邮件"""
-    dyn_id = info["dynamic_id"]
-    url = f"https://t.bilibili.com/{dyn_id}"
-    ct = time.strftime("%Y-%m-%d %H:%M:%S")
-
-    if is_new:
-        title = f"[{UP_NAME}] 首次记录置顶动态"
-        change_desc = "系统首次发现置顶动态并记录。"
-    else:
-        title = f"[{UP_NAME}] 置顶动态已更换"
-        prev_id = (previous_info or {}).get("dynamic_id", "?")
-        change_desc = f"置顶动态 ID 已从 {prev_id} 更换为 {dyn_id}。"
-
-    # 图片 HTML
-    img_html = ""
-    for src in info["images"][:3]:
-        if src.startswith("//"):
-            src = "https:" + src
-        elif src.startswith("http://"):
-            src = src.replace("http://", "https://")
-        img_html += f'<img src="{src}" style="max-width:600px;margin:4px 0;display:block;" />'
-
-    return f"""<!DOCTYPE html>
-<html><head><meta charset="utf-8"></head><body>
-<h2>{title}</h2>
-<p><strong>变更时间:</strong> {ct}</p>
-<p><strong>变更说明:</strong> {change_desc}</p>
-<hr>
-<h3>新置顶动态信息</h3>
-<table style="border-collapse:collapse;width:100%;max-width:700px">
-  <tr><td style="padding:6px;border:1px solid #ddd;background:#f5f5f5;width:100px"><strong>动态ID</strong></td>
-      <td style="padding:6px;border:1px solid #ddd">{dyn_id}</td></tr>
-  <tr><td style="padding:6px;border:1px solid #ddd;background:#f5f5f5"><strong>纯数字ID</strong></td>
-      <td style="padding:6px;border:1px solid #ddd;font-family:monospace">{dyn_id}</td></tr>
-  <tr><td style="padding:6px;border:1px solid #ddd;background:#f5f5f5"><strong>类型</strong></td>
-      <td style="padding:6px;border:1px solid #ddd">{info['type']}</td></tr>
-  <tr><td style="padding:6px;border:1px solid #ddd;background:#f5f5f5"><strong>发布时间</strong></td>
-      <td style="padding:6px;border:1px solid #ddd">{info['pub_time']}</td></tr>
-  <tr><td style="padding:6px;border:1px solid #ddd;background:#f5f5f5"><strong>点赞/评论</strong></td>
-      <td style="padding:6px;border:1px solid #ddd">点赞 {info['like_count']} / 评论 {info['comment_count']}</td></tr>
-  <tr><td style="padding:6px;border:1px solid #ddd;background:#f5f5f5"><strong>链接</strong></td>
-      <td style="padding:6px;border:1px solid #ddd"><a href="{url}">{url}</a></td></tr>
-</table>
-<br>
-<p><strong>内容:</strong> {info['text'] or '(无文字)'}</p>
-{img_html}
-<hr>
-<p style="color:#999;font-size:12px">此邮件由 BTCE 置顶动态监测模块自动发送</p>
-</body></html>"""
-
-
-async def check_pinned_dynamic(uid: str = None) -> Optional[str]:
+async def check_pinned_dynamic(uid: str = None) -> dict:
     """
-    通过 API 发现当前置顶动态，检测是否更换，更换时发邮件通知。
-    返回当前置顶动态 ID，无置顶则返回 None。
+    通过 API 发现当前置顶动态，检测是否更换。
+    只检测和记录状态，不发送邮件。
 
     Args:
         uid: B站 UID，默认用 config.UP_UID
     Returns:
-        当前置顶动态 ID 字符串，或 None
+        {"changed": bool, "current_id": str|None, "previous_id": str|None, "is_new": bool}
     """
     from bili_api import BiliAPI
 
     uid = uid or UP_UID
     cookie_file = COOKIE_FILE
 
+    result = {"changed": False, "current_id": None, "previous_id": None, "is_new": False, "api_id": None}
+
     if not cookie_file.exists():
         logger.warning("置顶监测: Cookie 文件不存在，跳过")
-        return None
+        return result
 
     bili = BiliAPI(cookie_file)
     raw_items, ok = await bili._fetch_raw(uid)
@@ -152,79 +65,102 @@ async def check_pinned_dynamic(uid: str = None) -> Optional[str]:
 
     if not ok:
         logger.warning("置顶监测: API 请求失败，跳过本轮")
-        return None
+        return result
 
     pinned = _find_pinned(raw_items)
-    current_pinned_id = pinned.get("id_str") if pinned else None
+    api_pinned_id = pinned.get("id_str") if pinned else None
     state = _load_state()
-    last_pinned_id = state.get("pinned_dynamic_id")
+    monitored_id = state.get("pinned_dynamic_id")  # 系统正在监控的ID
 
-    # 无变化
-    if current_pinned_id and current_pinned_id == last_pinned_id:
-        return current_pinned_id
+    result["api_id"] = api_pinned_id
+    result["current_id"] = monitored_id or api_pinned_id
+    result["previous_id"] = monitored_id
 
-    # 有变化（首次 / 更换 / 消失）
-    if current_pinned_id is None:
-        if last_pinned_id:
-            logger.info(f"置顶监测: 置顶动态已消失 (上次: {last_pinned_id})")
+    # 手动模式：API照查，但不自动切换，只上报差异
+    if state.get("mode") == "manual":
+        if api_pinned_id and api_pinned_id != monitored_id:
+            logger.info(f"置顶监测: 手动模式，B站置顶={api_pinned_id}，监控中={monitored_id}，不自动切换")
+        else:
+            logger.info(f"置顶监测: 手动模式，B站置顶={api_pinned_id} (一致)")
+        return result
+
+    # 自动模式 -------------------------------------------------
+    if api_pinned_id is None:
+        if monitored_id:
+            logger.info(f"置顶监测: 置顶动态已消失 (上次: {monitored_id})")
             state["pinned_dynamic_id"] = None
             state["last_change"] = time.strftime("%Y-%m-%d %H:%M:%S")
             _save_state(state)
-        return None
+            result["changed"] = True
+        return result
 
-    # 有置顶，但 ID 变了
-    info = _extract_info(pinned)
-    is_new = (last_pinned_id is None)
+    # 无变化
+    if api_pinned_id == monitored_id:
+        return result
 
-    logger.info(f"置顶监测: {'首次发现' if is_new else '已更换'} 置顶动态 -> {current_pinned_id}")
+    # 有变化（首次发现 或 自动更换）
+    is_new = (monitored_id is None)
+    logger.info(f"置顶监测: {'首次发现' if is_new else '已更换'} 置顶动态 -> {api_pinned_id}")
 
-    # 构建并发送邮件
-    previous_info = None
-    if not is_new:
-        previous_info = state.get("last_pinned_info", {})
-        # 尝试补全上次信息：如果之前只有 ID 没有详情，补一个简单 dict
-        if not previous_info or not previous_info.get("dynamic_id"):
-            previous_info = {"dynamic_id": last_pinned_id}
-
-    html = _build_email_html(info, is_new, previous_info)
-    subject = f"[{UP_NAME}] 置顶动态{'首次记录' if is_new else '已更换'}"
-    try:
-        # send_email 在 asyncio.to_thread 中调用以不阻塞事件循环
-        await asyncio.to_thread(send_email, subject=subject, content=html,
-                                to_emails=STATUS_MONITOR_EMAILS)
-        logger.info(f"置顶监测: 通知邮件已发送 -> {STATUS_MONITOR_EMAILS}")
-    except Exception as e:
-        logger.error(f"置顶监测: 发送邮件失败: {e}")
-
-    # 更新状态
-    state["pinned_dynamic_id"] = current_pinned_id
+    # 更新状态文件
+    state["pinned_dynamic_id"] = api_pinned_id
     state["last_change"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    mod_dyn = (pinned.get("modules", {}).get("module_dynamic") or {})
+    desc = mod_dyn.get("desc")
     state["last_pinned_info"] = {
-        "dynamic_id": info["dynamic_id"],
-        "type": info["type"],
-        "pub_time": info["pub_time"],
-        "text": info["text"][:100],
+        "dynamic_id": api_pinned_id,
+        "type": pinned.get("type", ""),
+        "pub_time": (pinned.get("modules", {}).get("module_author", {}).get("pub_time", "")),
+        "text": (desc.get("text", "") if desc else "")[:100],
     }
     _save_state(state)
 
-    return current_pinned_id
+    result["changed"] = True
+    result["is_new"] = is_new
+    result["current_id"] = api_pinned_id
+    return result
+
+
+def set_mode_manual(dynamic_id: str = None):
+    """
+    切换到手动模式，可同时指定置顶ID。
+    API 自动检测暂停，监控目标保持不变。
+    """
+    state = _load_state()
+    state["mode"] = "manual"
+    if dynamic_id:
+        state["pinned_dynamic_id"] = dynamic_id
+    state["last_change"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    _save_state(state)
+    current = state.get("pinned_dynamic_id", "?")
+    logger.info(f"置顶监测: 已切换为手动模式 (当前ID={current})")
+
+
+def set_mode_auto():
+    """
+    切换到自动模式，API 检测恢复，下次循环自动同步 B站置顶。
+    """
+    state = _load_state()
+    state["mode"] = "auto"
+    state["last_change"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    _save_state(state)
+    logger.info(f"置顶监测: 已切换为自动模式，下次API检测将同步B站置顶")
+
+
+def get_mode() -> str:
+    """返回当前模式 'auto' 或 'manual'"""
+    state = _load_state()
+    return state.get("mode", "auto")
 
 
 # ---- 独立运行入口 ----
 if __name__ == "__main__":
     async def main():
-        print(f"置顶动态监测 - {UP_NAME} (UID={UP_UID})")
+        print(f"pinned check - {UP_NAME} (UID={UP_UID})")
         result = await check_pinned_dynamic()
-        if result:
-            state = _load_state()
-            print(f"当前置顶动态 ID: {result}")
-            print(f"上次变更: {state.get('last_change', '未知')}")
-            info = state.get("last_pinned_info", {})
-            if info:
-                print(f"  类型: {info.get('type')}")
-                print(f"  时间: {info.get('pub_time')}")
-                print(f"  内容: {info.get('text', '')[:80]}")
+        if result["changed"]:
+            print(f"Changed! new={result['current_id']} old={result['previous_id']} is_new={result['is_new']}")
         else:
-            print("当前无置顶动态")
+            print(f"No change, current={result['current_id']}")
 
     asyncio.run(main())

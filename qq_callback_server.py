@@ -2,7 +2,8 @@
 """
 NapCat HTTP 事件回调服务器（v4.4）。
 监听 NapCat 上报的群消息事件，解析 @机器人 指令：
-  - 更换置顶 <动态ID>  → 运行时替换置顶动态
+  - 更换置顶 <动态ID>  → 运行时替换置顶动态（自动切手动模式）
+  - 切换手动 / 切换自动 → 切换置顶动态控制模式
   - 更新凭证           → 远程更新B站cookies（发二维码到邮箱）
   - 测试 / 状态        → 检查机器人运行状态
   - 帮助 / help / 命令 → 显示所有可用指令
@@ -20,6 +21,8 @@ from config_qq import (
     QQ_BOT_API_URL, QQ_BOT_ACCESS_TOKEN, QQ_GROUP_IDS, QQ_MANAGEMENT_GROUP_IDS,
     QQ_BOT_QQ_ID, QQ_CALLBACK_PORT, QQ_CALLBACK_ENABLED, QQ_ADMIN_USERS
 )
+
+from pinned_dynamic_monitor import set_mode_manual, set_mode_auto, get_mode
 
 # cookie_renewer 可能因缺少 qrcode 库而导入失败（仅影响更新凭证功能）
 try:
@@ -151,6 +154,26 @@ async def handle_callback(request: web.Request) -> web.Response:
                 group_id,
                 "⚠️ 内存已更新但 config.py 写入失败，请检查日志"
             )
+    # 模式切换指令：@bot 切换手动 / @bot 切换自动
+    if re.search(rf'\[CQ:at,qq={re.escape(QQ_BOT_QQ_ID)}[^\]]*\]\s*切换手动', message):
+        if user_id not in QQ_ADMIN_USERS:
+            await _reply_to_group(group_id, "你没有权限执行此操作")
+            return web.json_response({"status": "ok"})
+        current_id = _monitor.pinned_dynamic_id if _monitor else "?"
+        set_mode_manual()  # 保持当前ID不变，切到手动
+        await _reply_to_group(group_id,
+            f"已切换为手动模式\n当前置顶: https://t.bilibili.com/{current_id}")
+        return web.json_response({"status": "ok"})
+
+    if re.search(rf'\[CQ:at,qq={re.escape(QQ_BOT_QQ_ID)}[^\]]*\]\s*切换自动', message):
+        if user_id not in QQ_ADMIN_USERS:
+            await _reply_to_group(group_id, "你没有权限执行此操作")
+            return web.json_response({"status": "ok"})
+        set_mode_auto()
+        await _reply_to_group(group_id,
+            "已切换为自动模式\nAPI检测恢复后会自动同步B站置顶")
+        return web.json_response({"status": "ok"})
+
     # 测试指令：@bot 测试 / @bot 状态
     if re.search(rf'\[CQ:at,qq={re.escape(QQ_BOT_QQ_ID)}[^\]]*\]\s*(测试|状态)', message):
         from datetime import datetime
@@ -168,7 +191,9 @@ async def handle_callback(request: web.Request) -> web.Response:
         if _monitor:
             stats = _monitor.health_checker.get_stats(total_loops=_monitor.loop_count)
             monitor_info = (
-                f"🔗 当前置顶: https://t.bilibili.com/{_monitor.pinned_dynamic_id}\n"
+                f"🎛 模式: {'手动' if get_mode() == 'manual' else '自动'}\n"
+                f"🔗 B站置顶: https://t.bilibili.com/{getattr(_monitor, 'api_pinned_id', _monitor.pinned_dynamic_id)}\n"
+                f"📌 监测动态: https://t.bilibili.com/{_monitor.pinned_dynamic_id}\n"
                 f"🔄 当前轮次: 第{_monitor.loop_count}轮\n"
                 f"⏱ 已运行: {stats.get('重启后运行时间', '?')}\n"
                 f"📊 置顶抓取: {stats.get('抓取成功率', '?')} ({stats.get('抓取成功次数', 0)}/{stats.get('抓取次数', 0)})\n"
@@ -231,7 +256,9 @@ async def handle_callback(request: web.Request) -> web.Response:
             "　@机器人 测试　→ 查看运行状态+成功率+凭证时间\n"
             "　@机器人 帮助　→ 显示本帮助\n\n"
             "🔸 管理指令（仅管理员）：\n"
-            "　@机器人 更换置顶 <动态ID>　→ 运行时替换置顶动态\n"
+            "　@机器人 更换置顶 <动态ID>　→ 替换置顶动态（自动切手动）\n"
+            "　@机器人 切换手动　→ 切为手动模式，锁定当前置顶\n"
+            "　@机器人 切换自动　→ 切为自动模式，API自动跟踪\n"
             "　@机器人 更新凭证　→ 远程更新B站cookies（邮箱二维码）"
         )
         await _reply_to_group(group_id, help_text)
