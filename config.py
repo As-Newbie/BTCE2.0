@@ -67,7 +67,7 @@ STATUS_MONITOR_INTERVAL = 7200  # 状态检查间隔（秒），2小时
 NO_UPDATE_ALERT_HOURS = 28      # 无更新提醒阈值（小时）
 
 # ===== 性能监控配置 =====
-PERFORMANCE_REPORT_CYCLE_INTERVAL = 12000  # 12000轮发送一次报告（约13.3h一次，避免一天两次）
+PERFORMANCE_REPORT_CYCLE_INTERVAL = 18000  # 18000轮发送一次报告（约20h一次）
 
 # ===== 告警阈值配置 =====
 # 置顶评论监控（Playwright浏览器）
