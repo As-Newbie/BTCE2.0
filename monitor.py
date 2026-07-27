@@ -10,7 +10,7 @@ from playwright.async_api import async_playwright, TimeoutError as PlaywrightTim
 
 from config import (
     CHECK_INTERVAL, COOKIE_FILE, HISTORY_FILE,
-    MAIL_SAVE_DIR, UP_NAME, PINNED_DYNAMIC_ID, PINNED_CHECK_INTERVAL,
+    MAIL_SAVE_DIR, UP_NAME, UP_UID, PINNED_DYNAMIC_ID, PINNED_CHECK_INTERVAL,
     BROWSER_CONFIG, BROWSER_RESTART_INTERVAL,
     P1_TOTAL_FAILURE_THRESHOLD, P2_SUCCESS_RATE_THRESHOLD,
     AUTO_PUBLISH_ENABLED, AUTO_PUBLISH_TOPIC_ID, AUTO_PUBLISH_TOPIC_NAME,
@@ -29,7 +29,6 @@ from retry_decorator import BROWSER_RETRY_CONFIG, async_retry
 from performance_monitor import performance_monitor
 from qq_utils import send_qq_message
 from config_qq import QQ_GROUP_IDS
-from dynamic import MONITOR_LIST
 from bili_api import BiliAPI
 from pinned_dynamic_monitor import check_pinned_dynamic, set_mode_manual, set_mode_auto, get_mode
 from color_config import ColorConfig
@@ -537,8 +536,7 @@ class Monitor:
         success = False
 
         try:
-            for up in MONITOR_LIST:
-                uid, name = up["uid"], up["name"]
+            for uid, name in [(UP_UID, UP_NAME)]:
 
                 # 1) 优先检测置顶评论（核心功能）
                 pinned_id = self.pinned_dynamic_id
@@ -660,7 +658,7 @@ body {{ font-family:'Microsoft YaHei',Arial,sans-serif; margin:0; padding:20px; 
             logger.info(f"📈 状态监控: {self.status_monitor.get_status_info()}")
 
     async def run(self):
-        logger.info(f"=== {UP_NAME} 监控 UID={MONITOR_LIST[0]['uid']} 置顶ID={self.pinned_dynamic_id} 间隔={self.check_interval}s ===")
+        logger.info(f"=== {UP_NAME} 监控 UID={UP_UID} 置顶ID={self.pinned_dynamic_id} 间隔={self.check_interval}s ===")
         try:
             await self.initialize_browser()
             perf_task = asyncio.create_task(performance_monitor.periodic_report(interval_minutes=60))

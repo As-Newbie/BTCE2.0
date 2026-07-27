@@ -62,7 +62,6 @@ BTCE/
 ├── config_custom.example.py   # 个性化文案配置模板（v4.14: config_custom模式）
 ├── config_email.example.py    # 邮箱配置模板
 ├── config_qq.example.py       # QQ配置模板
-├── dynamic.py                 # 监控目标列表
 ├── health_check.py            # 健康检查
 ├── performance_monitor.py     # 性能监控+P1/P2告警+日报
 ├── status_monitor.py          # 状态监控（无更新时长告警）
@@ -118,7 +117,7 @@ pm2 start main.py --name bili-monitor --interpreter python3
 
 | 配置项 | 位置 | 说明 |
 |--------|------|------|
-| 监控目标 | `dynamic.py` `MONITOR_LIST` | UID + 名称 |
+| 监控目标 | `config.py` `UP_UID` / `UP_NAME` | UID + 名称 |
 | 置顶动态 ID | `config.py` `PINNED_DYNAMIC_ID` | v4.14起API自动识别，也可手动指定 |
 | 置顶更换检测间隔 | `config.py` `PINNED_CHECK_INTERVAL` | 默认 3600s（1小时） |
 | 动态类型过滤 | `config.py` `DYNAMIC_SKIP_TYPES` | 排除自动生成的动态类型（v4.13） |

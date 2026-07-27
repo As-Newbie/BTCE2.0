@@ -114,13 +114,6 @@ DYNAMIC_SKIP_TYPES = {
     "DYNAMIC_TYPE_LIVE_RCMD",  # 直播开播自动动态（下播消失）
 }
 
-# ===== 动态链接配置 =====
-try:
-    from dynamic import DYNAMIC_URLS
-except ImportError:
-    DYNAMIC_URLS = []
-    print("⚠️ 警告: 无法从 dynamic.py 导入 DYNAMIC_URLS，使用空列表")
-
 # ===== 文件路径配置 =====
 COOKIE_FILE = BASE_DIR / "cookies.json"
 HISTORY_FILE = BASE_DIR / "bili_pinned_comment.json"
