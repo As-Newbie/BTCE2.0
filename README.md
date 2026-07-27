@@ -1,4 +1,4 @@
-# BTCE 4.13 — B站动态/直播监控系统
+# BTCE 4.14 — B站动态/直播监控系统
 
 基于 Python + Playwright 的 Bilibili UP 主动态和直播自动化监控系统，支持多通道实时通知及自动发布动态。
 
@@ -12,6 +12,7 @@
 
 | 版本 | 主要变更 |
 |------|---------|
+| **v4.14** | 置顶动态自动发现：API module_tag 识别置顶，更换时邮件通知管理邮箱，1h定时检测 |
 | **v4.13** | 动态类型过滤：排除B站开播自动生成的 DYNAMIC_TYPE_LIVE_RCMD 动态，通过 config.DYNAMIC_SKIP_TYPES 配置 |
 | **v4.12** | 邮件HTML统一备份：send_email() 发送前自动保存到 sent_emails/，覆盖全部邮件类型 |
 | **v4.11** | B站动态发布末尾附加评论纯文本+MD5去重标记，避免重复动态被B站拿下 |
@@ -45,7 +46,8 @@ BTCE/
 ├── main.py                    # 程序入口
 ├── monitor.py                 # 核心监控逻辑
 ├── auto_publish.py            # B站动态自动发布模块（v4.2）
-├── bili_api.py                # B站动态列表 API 客户端
+├── bili_api.py                # B站动态列表 API 客户端（v4.14: +原始数据方法）
+├── pinned_dynamic_monitor.py  # 置顶动态自动发现+更换邮件通知（v4.14）
 ├── live_monitor.py            # 直播状态监控
 ├── monitor_scheduler.py       # 直播监控调度器
 ├── render_comment.py          # 评论渲染与变化检测

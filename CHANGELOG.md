@@ -2,6 +2,21 @@
 
 BTCE 各版本详细变更记录。简表见 [README.md](README.md#版本演进)。
 
+## v4.14 — 置顶动态自动发现，更换邮件通知 (2026-07)
+
+- **置顶动态自动发现**：通过 API `modules.module_tag.text` 字段识别置顶动态，无需手动维护 `PINNED_DYNAMIC_ID`
+- **置顶更换邮件通知**：检测到置顶动态 ID 变更时自动发送 HTML 邮件到管理邮箱（`STATUS_MONITOR_EMAILS`），包含动态详情+图片
+- **`pinned_dynamic_monitor.py`**：新增独立模块，可独立运行或集成到主循环
+- **`bili_api.py` 重构**：新增 `_fetch_raw()` 方法返回含完整 `modules` 的原始数据；`get_dynamics()` 精简版新增 `module_tag` 字段
+- **`PINNED_CHECK_INTERVAL`**：config 新增置顶更换检测频率（默认 3600s / 1小时），主循环按间隔定时调用
+- **`monitor.py` 集成**：主循环第3步定期调用 `check_pinned_dynamic()`，与置顶评论检测/新动态检测并列
+
+### XTong 的贡献
+- **需求与设计**：提出置顶动态更换自动检测需求，确认 API 数据结构方案
+
+### Claude (AI Assistant) 的贡献
+- **编码实现**：`pinned_dynamic_monitor.py` 完整模块；`bili_api.py` 重构+`module_tag` 字段；`config.py` 新增频率配置；`monitor.py` 主循环集成；部署与服务器验证
+
 ## v4.13 — 动态类型过滤，排除直播自动动态 (2026-07)
 
 - **动态类型过滤**：新增 `DYNAMIC_SKIP_TYPES` 配置项，可排除 B站 自动生成的动态类型

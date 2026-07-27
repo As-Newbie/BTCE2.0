@@ -38,11 +38,8 @@ class BiliAPI:
     async def close(self):
         pass  # 无状态，不需要清理
 
-    async def get_dynamics(self, uid: str) -> list[dict]:
-        """
-        获取用户空间动态列表（用 urllib 同步请求，asyncio.to_thread 包装）。
-        返回: (list[dict], bool) — 列表 + 是否成功
-        """
+    async def _fetch_raw(self, uid: str) -> tuple[list[dict], bool]:
+        """调用 API 并返回原始 items 列表（含完整 modules），供需要详情的模块使用"""
         import urllib.request
 
         cookie_str = self._load_cookie_str()
@@ -71,10 +68,19 @@ class BiliAPI:
             return [], False
 
         api_data = data.get("data") or {}
-        items = api_data.get("items", [])
+        return api_data.get("items", []), True
+
+    async def get_dynamics(self, uid: str) -> list[dict]:
+        """
+        获取用户空间动态列表（精简版，供新动态检测用）。
+        返回: (list[dict], bool) — 列表 + 是否成功
+        """
+        items, ok = await self._fetch_raw(uid)
+        if not ok:
+            return [], False
+
         result = []
         for item in items:
-            # 新版结构: item.id_str / item.type / item.modules.module_dynamic
             dyn_id = item.get("id_str", "")
             dyn_type = item.get("type", "")
 
@@ -103,7 +109,8 @@ class BiliAPI:
                 "type": dyn_type,
                 "content": content.strip(),
                 "images": images,
-                "timestamp": 0,  # 新版接口此层无 timestamp，不影响新动态检测
+                "timestamp": 0,
+                "module_tag": (modules.get("module_tag") or {}).get("text", ""),
             })
 
         return result, True

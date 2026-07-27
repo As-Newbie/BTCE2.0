@@ -9,7 +9,8 @@ from playwright.async_api import async_playwright, TimeoutError as PlaywrightTim
 
 from config import (
     CHECK_INTERVAL, COOKIE_FILE, HISTORY_FILE,
-    MAIL_SAVE_DIR, UP_NAME, PINNED_DYNAMIC_ID, BROWSER_CONFIG, BROWSER_RESTART_INTERVAL,
+    MAIL_SAVE_DIR, UP_NAME, PINNED_DYNAMIC_ID, PINNED_CHECK_INTERVAL,
+    BROWSER_CONFIG, BROWSER_RESTART_INTERVAL,
     P1_TOTAL_FAILURE_THRESHOLD, P2_SUCCESS_RATE_THRESHOLD,
     AUTO_PUBLISH_ENABLED, AUTO_PUBLISH_TOPIC_ID, AUTO_PUBLISH_TOPIC_NAME,
     QQ_MODE, EMAIL_MODE, BILI_MODE,
@@ -26,6 +27,7 @@ from qq_utils import send_qq_message
 from config_qq import QQ_GROUP_IDS
 from dynamic import MONITOR_LIST
 from bili_api import BiliAPI
+from pinned_dynamic_monitor import check_pinned_dynamic
 import auto_publish
 
 
@@ -42,6 +44,7 @@ class Monitor:
         self.comment_renderer = CommentRenderer()
         self.health_checker = HealthChecker()
         self.loop_count = 0
+        self.last_pinned_check = 0  # 上次置顶动态更换检测的时间戳
         self.is_running = True
 
         if os.path.exists(self.history_file):
@@ -485,6 +488,14 @@ class Monitor:
                     if is_cold and seen:
                         logger.info(f"🧊 冷启动：静默记录 {len(seen)} 条（已过滤 {skipped_count} 条自动动态）")
                     self.history_data["seen_dynamics"] = list(seen)[-500:]
+
+                # 3) 定期检测置顶动态是否更换（默认1h一次）
+                now = time.time()
+                if now - self.last_pinned_check >= PINNED_CHECK_INTERVAL:
+                    pinned_result = await check_pinned_dynamic(uid)
+                    if pinned_result:
+                        logger.info(f"📌 置顶检测完成: {pinned_result}")
+                    self.last_pinned_check = now
 
             self._save_history()
         except Exception as e:
