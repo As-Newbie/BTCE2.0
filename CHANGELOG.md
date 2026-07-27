@@ -2,20 +2,22 @@
 
 BTCE 各版本详细变更记录。简表见 [README.md](README.md#版本演进)。
 
-## v4.14 — 置顶动态自动发现，更换邮件通知 (2026-07)
+## v4.14 — 置顶动态自动发现+手动/自动双模式 (2026-07)
 
-- **置顶动态自动发现**：通过 API `modules.module_tag.text` 字段识别置顶动态，无需手动维护 `PINNED_DYNAMIC_ID`
-- **置顶更换邮件通知**：检测到置顶动态 ID 变更时自动发送 HTML 邮件到管理邮箱（`STATUS_MONITOR_EMAILS`），包含动态详情+图片
-- **`pinned_dynamic_monitor.py`**：新增独立模块，可独立运行或集成到主循环
-- **`bili_api.py` 重构**：新增 `_fetch_raw()` 方法返回含完整 `modules` 的原始数据；`get_dynamics()` 精简版新增 `module_tag` 字段
-- **`PINNED_CHECK_INTERVAL`**：config 新增置顶更换检测频率（默认 3600s / 1小时），主循环按间隔定时调用
-- **`monitor.py` 集成**：主循环第3步定期调用 `check_pinned_dynamic()`，与置顶评论检测/新动态检测并列
+- **置顶动态自动发现**：通过 API `modules.module_tag.text` 字段识别置顶，替换手动配置 `PINNED_DYNAMIC_ID`
+- **`pinned_dynamic_monitor.py`**：纯检测模块，API 发现置顶+对比 state 文件+返回变更结果；不负责邮件/截图
+- **手动/自动双模式**：`pinned_dynamic_state.json` 持久化 `mode` 字段；手动模式 API 照查但不自动切换，自动模式更换时自动跟进
+- **QQ 回调控制**：`@机器人 切换手动`/`切换自动` 实时切换；`@机器人 更换置顶 <id>` 自动切手动；`测试` 指令显示 B站置顶 vs 监测动态两条
+- **置顶更换通知**：自动模式下检测到更换→立即更新监控目标→全页截图→gradient 卡片邮件（base64 内嵌）→通知 `STATUS_MONITOR_EMAILS`
+- **`bili_api.py` 重构**：新增 `_fetch_raw()`（含完整 modules）+ `get_dynamics()` 精简版新增 `module_tag` 字段
+- **`monitor.py`**：新增 `_take_dynamic_screenshot()` 公用截图方法；主循环第3步定期检测（`PINNED_CHECK_INTERVAL` 间隔）+ 更换后截图邮件流程
+- **config_custom 配置分离**：新增 `config_custom.example.py` 模板；个性化文案（QQ消息、邮件标题）走 config 变量 + `config_custom.py` 覆盖，Git 存通用默认，部署不误伤
 
 ### XTong 的贡献
-- **需求与设计**：提出置顶动态更换自动检测需求，确认 API 数据结构方案
+- **需求与设计**：置顶动态更换自动检测 → 手动/自动双模式 → QQ 回调控制 → 截图邮件通知，全流程设计
 
 ### Claude (AI Assistant) 的贡献
-- **编码实现**：`pinned_dynamic_monitor.py` 完整模块；`bili_api.py` 重构+`module_tag` 字段；`config.py` 新增频率配置；`monitor.py` 主循环集成；部署与服务器验证
+- **编码实现**：全模块编写与重构 (`pinned_dynamic_monitor.py`、`bili_api.py`、`monitor.py`、`qq_callback_server.py`)；`config_custom.py` 配置分离方案设计与实现；部署与服务器验证
 
 ## v4.13 — 动态类型过滤，排除直播自动动态 (2026-07)
 

@@ -44,10 +44,10 @@
 ```
 BTCE/
 ├── main.py                    # 程序入口
-├── monitor.py                 # 核心监控逻辑
+├── monitor.py                 # 核心监控逻辑（v4.14: +置顶更换检测+公用截图）
 ├── auto_publish.py            # B站动态自动发布模块（v4.2）
-├── bili_api.py                # B站动态列表 API 客户端（v4.14: +原始数据方法）
-├── pinned_dynamic_monitor.py  # 置顶动态自动发现+更换邮件通知（v4.14）
+├── bili_api.py                # B站动态列表 API 客户端（v4.14: +_fetch_raw+module_tag）
+├── pinned_dynamic_monitor.py  # 置顶自动发现+手动/自动双模式（v4.14）
 ├── live_monitor.py            # 直播状态监控
 ├── monitor_scheduler.py       # 直播监控调度器
 ├── render_comment.py          # 评论渲染与变化检测
@@ -55,20 +55,22 @@ BTCE/
 ├── email_utils.py             # SMTP 邮件发送
 ├── qq_message_generator.py    # QQ 消息生成
 ├── qq_utils.py                # QQ 机器人推送
-├── qq_callback_server.py      # QQ回调服务器（v4.4+: @机器人指令）
-├── cookie_renewer.py           # Cookie远程更新（v4.7: 邮件二维码→扫码→自动保存）
+├── qq_callback_server.py      # QQ回调服务器（v4.14: +切换手动/自动指令）
+├── cookie_renewer.py          # Cookie远程更新（v4.7）
 ├── color_config.py            # 邮件渐变色配置
-├── config.py                  # 主配置（含 PINNED_DYNAMIC_ID）
+├── config.py                  # 主配置（末尾 from config_custom import *）
+├── config_custom.example.py   # 个性化文案配置模板（v4.14: config_custom模式）
 ├── config_email.example.py    # 邮箱配置模板
 ├── config_qq.example.py       # QQ配置模板
 ├── dynamic.py                 # 监控目标列表
 ├── health_check.py            # 健康检查
-├── performance_monitor.py     # 性能监控
-├── status_monitor.py          # 状态监控
-├── self_monitor.py            # 直播失败计数
+├── performance_monitor.py     # 性能监控+P1/P2告警+日报
+├── status_monitor.py          # 状态监控（无更新时长告警）
+├── self_monitor.py            # 直播失败计数器
 ├── retry_decorator.py         # 重试装饰器
 ├── logger_config.py           # 日志配置
 ├── get_cookies.py             # Cookie 获取工具
+├── manual_publish.py          # 手动发布B站动态工具
 ├── requirements.txt           # Python 依赖
 ├── LICENSE                    # MIT 开源协议
 ├── mermaid-diagram.png        # 架构流程图
