@@ -31,9 +31,9 @@ LIVE_FAILURE_THRESHOLD = 10  # 连续失败阈值（P1告警）
 LIVE_SUCCESS_RATE_THRESHOLD = 0.9  # 成功率阈值（P2告警）
 
 # ===== 动态监控配置 =====
-UP_NAME = ""  # 监控目标昵称（需自行配置）
+UP_NAME = "星瞳_Official"  # 监控目标昵称（需自行配置）
 UP_UID = "401315430"  # 监控目标B站UID
-PINNED_DYNAMIC_ID = "1208161183564038147"  # 置顶动态ID（手动配置）
+PINNED_DYNAMIC_ID = "1228865073445863431"  # 置顶动态ID（手动配置）
 PINNED_CHECK_INTERVAL = 3600  # 置顶动态更换检测间隔（秒），1小时
 CHECK_INTERVAL = 6  # v4.8：页面复用后缩短检查间隔（原8s）
 MAX_RETRY_ATTEMPTS = 3
@@ -137,3 +137,17 @@ from config_email import SMTP_SERVER, SMTP_PORT, EMAIL_USER, EMAIL_PASSWORD, TO_
 # ===== QQ推送配置 =====
 # 直接从独立的配置文件导入，不设置默认值
 from config_qq import QQ_GROUP_IDS, QQ_PUSH_ENABLED
+
+# ===== 个性化文案配置（config_custom.py 不存在则用通用默认值）=====
+try:
+    from config_custom import (
+        QQ_SINGLE_LINK_LABEL, QQ_SINGLE_TIME_LABEL,
+        QQ_BATCH_LINK_LABEL, QQ_BATCH_TIME_LABEL,
+        EMAIL_PINNED_SUBJECT,
+    )
+except ImportError:
+    QQ_SINGLE_LINK_LABEL = "🔗"
+    QQ_SINGLE_TIME_LABEL = "📅"
+    QQ_BATCH_LINK_LABEL = "🔗"
+    QQ_BATCH_TIME_LABEL = "📅"
+    EMAIL_PINNED_SUBJECT = "置顶评论更新"

@@ -14,7 +14,10 @@ from config import (
     P1_TOTAL_FAILURE_THRESHOLD, P2_SUCCESS_RATE_THRESHOLD,
     AUTO_PUBLISH_ENABLED, AUTO_PUBLISH_TOPIC_ID, AUTO_PUBLISH_TOPIC_NAME,
     QQ_MODE, EMAIL_MODE, BILI_MODE,
-    DYNAMIC_SKIP_TYPES
+    DYNAMIC_SKIP_TYPES,
+    QQ_SINGLE_LINK_LABEL, QQ_SINGLE_TIME_LABEL,
+    QQ_BATCH_LINK_LABEL, QQ_BATCH_TIME_LABEL,
+    EMAIL_PINNED_SUBJECT,
 )
 from render_comment import CommentRenderer
 from email_utils import send_email
@@ -247,14 +250,14 @@ class Monitor:
                 sp = dyn.get("screenshot_path", "")
                 parts = [f"【{up_name}】发布了新动态~"]
                 if sp: parts.append(f"[CQ:image,file=file:///{sp.replace(chr(92), '/')}]")
-                parts.append(f"🔗 https://t.bilibili.com/{dyn['dynamic_id']}")
-                parts.append(f"📅 {current_time}")
+                parts.append(f"{QQ_SINGLE_LINK_LABEL} https://t.bilibili.com/{dyn['dynamic_id']}")
+                parts.append(f"{QQ_SINGLE_TIME_LABEL} {current_time}")
                 await send_qq_message('\n'.join(parts))
             else:
                 lines = [f"【{up_name}】发布了 {len(new_dynamics)} 条新动态~"]
                 for d in new_dynamics[:5]:
-                    lines.append(f"🔗 https://t.bilibili.com/{d['dynamic_id']}")
-                lines.append(f"📅 {current_time}")
+                    lines.append(f"{QQ_BATCH_LINK_LABEL} https://t.bilibili.com/{d['dynamic_id']}")
+                lines.append(f"{QQ_BATCH_TIME_LABEL} {current_time}")
                 await send_qq_message('\n'.join(lines))
 
             if self.status_monitor: self.status_monitor.record_change()
@@ -399,7 +402,7 @@ class Monitor:
                 email_sp = None  # text模式：文字+表情+评论区图片
 
             body = self.comment_renderer.render_email_content(dynamic_id, cur_html, cur_img, last_html, last_img, ct, email_sp)
-            asyncio.create_task(asyncio.to_thread(send_email, subject=f"【{UP_NAME}】置顶评论更新", content=body))
+            asyncio.create_task(asyncio.to_thread(send_email, subject=f"【{UP_NAME}】{EMAIL_PINNED_SUBJECT}", content=body))
             logger.info(f"📧 置顶评论邮件已提交 (模式={EMAIL_MODE})")
 
             # ── 3) B站发布 ──
