@@ -1,7 +1,7 @@
 # qq_message_generator.py
 from bs4 import BeautifulSoup
 from logger_config import logger
-from config import QQ_PINNED_UPDATE_TEXT
+from config import QQ_PINNED_UPDATE_TEXT, QQ_SINGLE_LINK_LABEL, QQ_SINGLE_TIME_LABEL
 
 
 class QQMessageGenerator:
@@ -94,36 +94,18 @@ class QQMessageGenerator:
             # 最终的备用消息
             return f"【{up_name}】动态更新通知\n动态ID: {dynamic_id}\n时间: {current_time}\n⚠️ 包含图片，请查看原动态"
 
-    def generate_new_dynamic_qq_message(self, up_name: str, dynamic_id: str, dynamic_url: str, current_time: str, content_text: str = "") -> str:
-        """生成新动态 QQ 群推送消息"""
-        msg = f"【{up_name}】发布了新动态~\n"
+    def generate_new_dynamic_qq_message(self, up_name: str, dynamic_id: str, dynamic_url: str,
+                                        current_time: str, content_text: str = "",
+                                        screenshot_path: str = None) -> str:
+        """生成新动态 QQ 群推送消息（支持截图）"""
+        parts = [f"【{up_name}】发布了新动态~"]
+        if screenshot_path:
+            parts.append(f"[CQ:image,file=file:///{screenshot_path.replace(chr(92), '/')}]")
         if content_text:
-            msg += f"内容：{content_text[:300]}\n"
-        msg += "----------------"
-        msg += f"动态链接：{dynamic_url}\n"
-        msg += f"检测时间：{current_time}\n"
-        return msg
-
-    def generate_new_dynamics_batch_qq_message(self, up_name: str, new_dynamics: list, current_time: str) -> str:
-        """生成批量新动态 QQ 推送消息"""
-        if len(new_dynamics) == 1:
-            dyn = new_dynamics[0]
-            content = dyn.get("content", "")[:100]
-            msg = f"【{up_name}】发布了新动态~\n"
-            if content:
-                msg += f"{content}\n"
-            msg += f"动态链接：https://t.bilibili.com/{dyn['dynamic_id']}\n"
-            msg += f"检测时间：{current_time}"
-        else:
-            msg = f"【{up_name}】发布了 {len(new_dynamics)} 条新动态~\n"
-            for i, dyn in enumerate(new_dynamics[:5]):
-                content = dyn.get("content", "")[:60]
-                msg += f"\n{i+1}. {content if content else '(无文字)'}\n"
-                msg += f"   🔗 https://t.bilibili.com/{dyn['dynamic_id']}\n"
-            if len(new_dynamics) > 5:
-                msg += f"\n... 还有 {len(new_dynamics) - 5} 条\n"
-            msg += f"📅 {current_time}"
-        return msg
+            parts.append(content_text[:300])
+        parts.append(f"{QQ_SINGLE_LINK_LABEL} {dynamic_url}")
+        parts.append(f"{QQ_SINGLE_TIME_LABEL} {current_time}")
+        return '\n'.join(parts)
 
 
 # 全局实例

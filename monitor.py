@@ -16,7 +16,6 @@ from config import (
     AUTO_PUBLISH_ENABLED, AUTO_PUBLISH_TOPIC_ID, AUTO_PUBLISH_TOPIC_NAME,
     QQ_MODE, EMAIL_MODE, BILI_MODE,
     DYNAMIC_SKIP_TYPES,
-    QQ_SINGLE_LINK_LABEL, QQ_SINGLE_TIME_LABEL,
     QQ_BATCH_LINK_LABEL, QQ_BATCH_TIME_LABEL,
     EMAIL_PINNED_SUBJECT,
 )
@@ -330,16 +329,15 @@ class Monitor:
             asyncio.create_task(asyncio.to_thread(send_email, subject=f"【{up_name}】发布了 {len(new_dynamics)} 条新动态", content=email_body))
             logger.info("📧 新动态邮件已提交")
 
-            # QQ合并发送（带截图的最多3张）
+            # QQ推送（走统一的消息生成器）
             if len(new_dynamics) == 1:
                 dyn = new_dynamics[0]
-                sp = dyn.get("screenshot_path", "")
-                parts = [f"【{up_name}】发布了新动态~"]
-                if sp: parts.append(f"[CQ:image,file=file:///{sp.replace(chr(92), '/')}]")
-                parts.append(f"{QQ_SINGLE_LINK_LABEL} https://t.bilibili.com/{dyn['dynamic_id']}")
-                parts.append(f"{QQ_SINGLE_TIME_LABEL} {current_time}")
-                await send_qq_message('\n'.join(parts))
+                msg = self.comment_renderer.generate_new_dynamic_qq_message(
+                    up_name, dyn['dynamic_id'], f"https://t.bilibili.com/{dyn['dynamic_id']}",
+                    current_time, dyn.get("content", ""), dyn.get("screenshot_path", ""))
+                await send_qq_message(msg)
             else:
+                # 多条极少出现，简单拼装
                 lines = [f"【{up_name}】发布了 {len(new_dynamics)} 条新动态~"]
                 for d in new_dynamics[:5]:
                     lines.append(f"{QQ_BATCH_LINK_LABEL} https://t.bilibili.com/{d['dynamic_id']}")
