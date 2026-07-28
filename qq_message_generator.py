@@ -36,8 +36,8 @@ class QQMessageGenerator:
                         qq_message += f"... 还有 {len(current_images) - 9} 张图片\n"
 
             qq_message += "----------------\n"
-            qq_message += f"📅 检测时间: {current_time}\n"
-            qq_message += f"🔗 监测动态: https://t.bilibili.com/{dynamic_id}\n"
+            qq_message += f"检测时间: {current_time}\n"
+            qq_message += f"监测动态: https://t.bilibili.com/{dynamic_id}\n"
             qq_message += "----------------"
 
             return qq_message
@@ -79,8 +79,8 @@ class QQMessageGenerator:
                 degraded_message += f"📸 包含 {len(current_images)} 张图片，请自行查看动态\n"
 
             degraded_message += "----------------\n"
-            degraded_message += f"📅 检测时间: {current_time}\n"
-            degraded_message += f"🔗 监测动态: https://t.bilibili.com/{dynamic_id}\n"
+            degraded_message += f"检测时间: {current_time}\n"
+            degraded_message += f"监测动态: https://t.bilibili.com/{dynamic_id}\n"
 
             if original_failed:
                 degraded_message += "🚨 消息已降级（图片推送超时）\n"
@@ -99,9 +99,9 @@ class QQMessageGenerator:
         msg = f"【{up_name}】发布了新动态~\n"
         if content_text:
             msg += f"内容：{content_text[:300]}\n"
-        msg += f"🔗 链接：{dynamic_url}\n"
-        msg += f"📅 检测时间：{current_time}\n"
         msg += "----------------"
+        msg += f"动态链接：{dynamic_url}\n"
+        msg += f"检测时间：{current_time}\n"
         return msg
 
     def generate_new_dynamics_batch_qq_message(self, up_name: str, new_dynamics: list, current_time: str) -> str:
@@ -112,8 +112,8 @@ class QQMessageGenerator:
             msg = f"【{up_name}】发布了新动态~\n"
             if content:
                 msg += f"{content}\n"
-            msg += f"🔗 https://t.bilibili.com/{dyn['dynamic_id']}\n"
-            msg += f"📅 {current_time}"
+            msg += f"动态链接：https://t.bilibili.com/{dyn['dynamic_id']}\n"
+            msg += f"检测时间：{current_time}"
         else:
             msg = f"【{up_name}】发布了 {len(new_dynamics)} 条新动态~\n"
             for i, dyn in enumerate(new_dynamics[:5]):
