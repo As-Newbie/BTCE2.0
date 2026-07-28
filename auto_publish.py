@@ -131,7 +131,7 @@ async def publish_dynamic(dynamic_id: str, screenshot_path: str, cookies: list,
         # 生成短哈希作为去重标记（评论文本+时间戳 → MD5前16位）
         hash_src = f"{comment_text}{time.time()}"
         short_hash = hashlib.md5(hash_src.encode()).hexdigest()[:16]
-        contents.append({"raw_text": f"\n\n置顶评论：{comment_text}\n——{short_hash}", "type": 1, "biz_id": ""})
+        contents.append({"raw_text": f"\n置顶评论：{comment_text}\n随机字符：{short_hash}", "type": 1, "biz_id": ""})
 
     body = {
         "dyn_req": {
