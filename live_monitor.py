@@ -175,7 +175,6 @@ class LiveMonitor:
     # 状态标签（加密/锁房/隐藏/付费等，纯展示不触发通知）
     # ------------------------------------------------------------------
     @staticmethod
-    @staticmethod
     def _build_status_tags(live_info: Dict[str, Any]) -> Optional[str]:
         """根据 room_init 字段生成标签文本（委托至 qq_message_generator）"""
         return qq_message_generator.build_live_status_tags(live_info)
