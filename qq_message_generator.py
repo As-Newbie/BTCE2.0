@@ -1,7 +1,9 @@
 # qq_message_generator.py
 from bs4 import BeautifulSoup
+from datetime import datetime
+from typing import Dict, Any, Optional
 from logger_config import logger
-from config import QQ_PINNED_UPDATE_TEXT, QQ_SINGLE_LINK_LABEL, QQ_SINGLE_TIME_LABEL
+from config import QQ_PINNED_UPDATE_TEXT, QQ_SINGLE_LINK_LABEL, QQ_SINGLE_TIME_LABEL, UP_NAME
 
 
 class QQMessageGenerator:
@@ -106,6 +108,52 @@ class QQMessageGenerator:
         parts.append(f"{QQ_SINGLE_LINK_LABEL} {dynamic_url}")
         parts.append(f"{QQ_SINGLE_TIME_LABEL} {current_time}")
         return '\n'.join(parts)
+
+    @staticmethod
+    def build_live_status_tags(live_info: Dict[str, Any]) -> Optional[str]:
+        """根据 room_init 字段生成直播状态标签文本，无特殊状态返回 None"""
+        tags = []
+        if live_info.get("encrypted"):
+            tags.append("🔒 密码保护")
+        if live_info.get("is_locked"):
+            tags.append("🔐 房间已锁定")
+        if live_info.get("is_hidden"):
+            tags.append("👻 房间已隐藏")
+        st = live_info.get("special_type", 0)
+        if st == 1:
+            tags.append("💰 付费直播")
+        elif st == 2:
+            tags.append("🎊 拜年纪")
+        return " | ".join(tags) if tags else None
+
+    def generate_live_qq_message(self, live_info: Dict[str, Any]) -> str:
+        """生成直播状态变更 QQ 群推送消息（开播/下播/标题更新）"""
+        ct = live_info["change_type"]
+        title = live_info.get("title", "无标题")
+        cover = live_info.get("cover", "")
+        room_id = live_info["room_id"]
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        prefix = {
+            "live_start": "🎉 开播提醒",
+            "live_end": "💤 下播提醒",
+            "title_change": "✏️ 标题更新",
+        }.get(ct, "📺 状态更新")
+
+        qq_msg = f"【{UP_NAME}直播监控】{prefix}\n"
+        qq_msg += f"标题：{title}\n"
+        qq_msg += f"链接：https://live.bilibili.com/{room_id}\n"
+        qq_msg += f"时间：{current_time}\n"
+
+        status_tags = self.build_live_status_tags(live_info)
+        if status_tags:
+            qq_msg += f"{status_tags}\n"
+
+        if cover:
+            qq_msg += f"封面：\n[CQ:image,file={cover}]\n"
+
+        qq_msg += "----------------"
+        return qq_msg
 
 
 # 全局实例

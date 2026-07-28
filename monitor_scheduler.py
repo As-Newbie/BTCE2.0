@@ -5,6 +5,7 @@ import time
 from datetime import datetime
 from logger_config import logger
 from live_monitor import live_monitor
+from qq_message_generator import qq_message_generator
 from config import (LIVE_ROOM_ID, LIVE_CHECK_INTERVAL, COOKIE_FILE, UP_NAME,
                     AUTO_PUBLISH_TOPIC_ID, AUTO_PUBLISH_TOPIC_NAME,
                     LIVE_BILI_PUBLISH_ENABLED)
@@ -107,7 +108,7 @@ class LiveMonitorScheduler:
                 self.logger.error("❌❌❌❌ 直播状态邮件发送失败")
 
             # 生成QQ消息
-            qq_message = live_monitor.generate_qq_message(live_info)
+            qq_message = qq_message_generator.generate_live_qq_message(live_info)
             qq_results = await send_qq_message(qq_message)
 
             qq_success_count = sum(1 for r in qq_results if r is True)
@@ -119,7 +120,7 @@ class LiveMonitorScheduler:
                     and live_info.get("change_type") == "title_change"):
                 cookies = self._load_cookies_list()
                 if cookies:
-                    status_tags = live_monitor._build_status_tags(live_info) or ""
+                    status_tags = qq_message_generator.build_live_status_tags(live_info) or ""
                     asyncio.create_task(
                         auto_publish.publish_live_update(
                             cover_url=live_info.get("cover", ""),
