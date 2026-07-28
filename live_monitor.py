@@ -2,6 +2,7 @@
 import aiohttp
 import time
 import json
+from pathlib import Path
 from datetime import datetime
 from typing import Optional, Dict, Any
 from logger_config import logger
@@ -9,6 +10,9 @@ from self_monitor import live_failure_counter
 from retry_decorator import NETWORK_RETRY_CONFIG, async_retry
 from config import LIVE_API_TIMEOUT, LIVE_ROOM_ID, COOKIE_FILE, UP_NAME
 from qq_message_generator import qq_message_generator
+
+# 状态持久化文件，重启后能对比上次记录
+LIVE_STATE_FILE = Path(__file__).parent / "live_state.json"
 '''
 | 场景     | status_changed | change_type  | should_notify | 是否发通知 |
 | ------ | -------------- | ------------ | ------------- | ----- |
@@ -35,6 +39,35 @@ class LiveMonitor:
         self.last_check_time: Optional[float] = None
         self.session: Optional[aiohttp.ClientSession] = None
         self.cookies = self.load_cookies()
+        self._load_state()  # 从磁盘恢复上次检查状态，重启后也能对比
+
+    # ------------------------------------------------------------------
+    # 状态持久化（磁盘 ↔ 内存）
+    # ------------------------------------------------------------------
+    def _load_state(self):
+        """从 live_state.json 恢复上次检查状态，重启后不丢失"""
+        try:
+            if not LIVE_STATE_FILE.exists():
+                self.logger.info("📄 无历史状态文件，首次启动不通知")
+                return
+            data = json.loads(LIVE_STATE_FILE.read_text(encoding="utf-8"))
+            self.last_live_status = data
+            self.logger.info(
+                f"📄 已恢复上次直播状态: live_status={data.get('live_status')}, "
+                f"title={data.get('title', '')[:30]}"
+            )
+        except Exception as e:
+            self.logger.warning(f"⚠️ 加载直播状态文件失败: {e}")
+
+    def _save_state(self):
+        """将当前直播状态写入 live_state.json，供下次重启恢复"""
+        try:
+            LIVE_STATE_FILE.write_text(
+                json.dumps(self.last_live_status, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+        except Exception as e:
+            self.logger.warning(f"⚠️ 保存直播状态文件失败: {e}")
 
     # ------------------------------------------------------------------
     # Cookie & Session
@@ -155,6 +188,7 @@ class LiveMonitor:
         )
 
         self.last_live_status = current
+        self._save_state()  # 持久化，重启后能对比变化
         return current
 
     def detect_status_change(self, current: Dict[str, Any]) -> (bool, str):
