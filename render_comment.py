@@ -179,3 +179,7 @@ class CommentRenderer:
         """生成新动态 QQ 消息"""
         return self.qq_generator.generate_new_dynamic_qq_message(
             up_name, dynamic_id, dynamic_url, current_time, content_text, screenshot_path)
+
+    def render_new_dynamics_batch_email(self, up_name: str, new_dynamics: list, current_time: str) -> str:
+        """生成批量新动态邮件"""
+        return self.email_renderer.render_new_dynamics_batch_email(up_name, new_dynamics, current_time)
