@@ -14,15 +14,15 @@ from qq_message_generator import qq_message_generator
 # 状态持久化文件，重启后能对比上次记录
 LIVE_STATE_FILE = Path(__file__).parent / "live_state.json"
 '''
-| 场景     | status_changed | change_type  | should_notify | 是否发通知 |
-| ------ | -------------- | ------------ | ------------- | ----- |
-| 首次启动   | ❌              | initial      | ❌             | ❌     |
-| 无变化轮询  | ❌              | no_change    | ❌             | ❌     |
-| 标题变化   | ✅              | title_change | ✅             | ✅     |
-| 开播     | ✅              | live_start   | ✅             | ✅     |
-| 下播     | ✅              | live_end     | ✅             | ✅     |
-| API 抖动 | ❌              | –            | ❌             | ❌     |
-| 网络失败   | ❌              | –            | ❌             | ❌     |
+| 场景     | status_changed | change_type  | 是否发通知 |
+| ------ | -------------- | ------------ | ----- |
+| 首次启动   | ❌              | initial      | ❌     |
+| 无变化轮询  | ❌              | no_change    | ❌     |
+| 标题变化   | ✅              | title_change | ✅     |
+| 开播     | ✅              | live_start   | ✅     |
+| 下播     | ✅              | live_end     | ✅     |
+| API 抖动 | ❌              | –            | ❌     |
+| 网络失败   | ❌              | –            | ❌     |
 '''
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -183,9 +183,6 @@ class LiveMonitor:
         changed, change_type = self.detect_status_change(current)
         current["status_changed"] = changed
         current["change_type"] = change_type
-        current["should_notify"] = (
-            changed and change_type in {"live_start", "live_end", "title_change"}
-        )
 
         self.last_live_status = current
         self._save_state()  # 持久化，重启后能对比变化
