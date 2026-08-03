@@ -19,6 +19,34 @@ BTCE 各版本详细变更记录。简表见 [README.md](README.md#版本演进)
 ### Claude (AI Assistant) 的贡献
 - **编码实现**：全模块编写与重构 (`pinned_dynamic_monitor.py`、`bili_api.py`、`monitor.py`、`qq_callback_server.py`)；`config_custom.py` 配置分离方案设计与实现；部署与服务器验证
 
+### v4.14 补丁 — 手动模式自动恢复 + api_pinned_id 同步修复 (2026-08-03)
+
+- **手动模式自动恢复**：`pinned_dynamic_monitor.py` 手动模式下每1h照查API，若B站实际置顶ID与手动设定的ID一致（说明用户操作已生效），自动调用 `set_mode_auto()` 切回自动模式，返回 `auto_restored=True`
+- **条件严格**：仅当 `api_pinned_id` 和 `monitored_id` 都非空且相等时触发；不一致或API失败不触发
+- **邮件通知**：`monitor.py` 收到 `auto_restored` 后发邮件到 `STATUS_MONITOR_EMAILS`，模板复用置顶更换邮件的 `ColorConfig` 渐变样式（标题「置顶监测已恢复自动模式」，含恢复时间+当前动态链接+原因说明）
+- **`api_pinned_id` 同步修复**：`update_pinned_dynamic_id()`（QQ回调更换置顶）漏更新 `self.api_pinned_id`，导致 `@bot 状态` 消息中「B站置顶」行显示旧ID。现增加 `self.api_pinned_id = new_id`，两条状态行实时一致
+
+### 设计逻辑（备忘）
+
+```
+手动模式下的 check_pinned_dynamic() 每1h运行:
+
+   API查到置顶ID → 跟 state 里的 monitored_id 比
+   ├── api_id == monitored_id  → set_mode_auto() + auto_restored=True → monitor.py发邮件
+   ├── api_id != monitored_id  → 只打日志「不自动切换」，保持manual
+   └── api_id is None          → 只打日志，保持manual
+
+自动模式（原有逻辑不变）:
+   ├── api_id != monitored_id  → 自动切换 + 截图 + 邮件通知
+   └── api_id == monitored_id  → 无操作
+```
+
+### XTong 的贡献
+- **需求与设计**：手动模式API一致时自动恢复自动模式 + 邮件通知 + 修复状态消息旧ID问题
+
+### Claude (AI Assistant) 的贡献
+- **编码实现**：`pinned_dynamic_monitor.py` 手动模式自动恢复逻辑；`monitor.py` 邮件通知+`api_pinned_id` 同步修复；本地双向测试验证；服务器部署
+
 ## v4.13 — 动态类型过滤，排除直播自动动态 (2026-07)
 
 - **动态类型过滤**：新增 `DYNAMIC_SKIP_TYPES` 配置项，可排除 B站 自动生成的动态类型
