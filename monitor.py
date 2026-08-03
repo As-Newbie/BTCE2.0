@@ -98,6 +98,7 @@ class Monitor:
     def update_pinned_dynamic_id(self, new_id: str):
         """运行时动态更换置顶动态ID（供QQ回调指令调用），同时切换为手动模式"""
         self.pinned_dynamic_id = new_id
+        self.api_pinned_id = new_id  # 同步更新API置顶ID，状态消息"B站置顶"行能立即显示新值
         self.history_data["last_pinned_dynamic_id"] = None
         set_mode_manual(new_id)  # 切手动+记录新ID，API不会自动切回
         logger.info(f"🔄 置顶动态ID已更换为 {new_id} (已切换为手动模式)")
@@ -580,6 +581,45 @@ class Monitor:
                 if now - self.last_pinned_check >= PINNED_CHECK_INTERVAL:
                     pr = await check_pinned_dynamic(uid)
                     self.api_pinned_id = pr.get("api_id") or pr.get("current_id") or self.api_pinned_id
+                    if pr.get("auto_restored"):
+                        # 手动模式下，API检测到B站置顶与手动设定一致 → 自动切回自动模式
+                        logger.info(f"✅ 置顶监测已自动切回自动模式 (ID={pr.get('api_id')})")
+                        # 发送邮件通知管理邮箱
+                        cc = ColorConfig()
+                        primary, secondary = cc.get_random_gradient()
+                        ct = time.strftime("%Y-%m-%d %H:%M:%S")
+                        url = f"https://t.bilibili.com/{pr['api_id']}"
+                        html = f"""<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<style>
+body {{ font-family:'Microsoft YaHei',Arial,sans-serif; margin:0; padding:20px; background-color:#f5f5f5; }}
+.container {{ max-width:600px; margin:0 auto; background-color:white; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.1); overflow:hidden; }}
+.header {{ background:linear-gradient(135deg,{primary},{secondary}); color:white; padding:20px; text-align:center; }}
+.header h1 {{ margin:0; font-size:22px; }}
+.content {{ padding:24px; }}
+.info-row {{ background:#f9f9f9; padding:10px 14px; border-radius:6px; margin-bottom:8px; border-left:4px solid {primary}; }}
+.info-row strong {{ color:{primary}; }}
+.footer {{ text-align:center; padding:16px; color:#999; font-size:12px; }}
+</style></head>
+<body>
+<div class="container">
+<div class="header"><h1>【{name}】置顶监测已恢复自动模式</h1></div>
+<div class="content">
+<div class="info-row"><strong>恢复时间:</strong> {ct}</div>
+<div class="info-row"><strong>当前监测动态:</strong> <a href="{url}">{url}</a></div>
+<div class="info-row"><strong>原因:</strong> 手动设定的置顶ID已与B站当前置顶一致，系统自动切回自动模式，后续将自动跟踪B站置顶更换。</div>
+</div>
+<div class="footer">此邮件由 BTCE 自动发送</div>
+</div>
+</body></html>"""
+                        asyncio.create_task(asyncio.to_thread(
+                            send_email,
+                            subject=f"【{name}】置顶监测已恢复自动模式",
+                            content=html,
+                            to_emails=STATUS_MONITOR_EMAILS,
+                        ))
+                        logger.info(f"📧 自动恢复邮件已提交")
                     if pr["changed"] and pr["current_id"]:
                         # 先更新监控目标，让后续检测立即用新置顶
                         self.pinned_dynamic_id = pr["current_id"]

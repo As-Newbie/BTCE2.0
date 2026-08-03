@@ -46,14 +46,15 @@ async def check_pinned_dynamic(uid: str = None) -> dict:
     Args:
         uid: B站 UID，默认用 config.UP_UID
     Returns:
-        {"changed": bool, "current_id": str|None, "previous_id": str|None, "is_new": bool}
+        {"changed": bool, "current_id": str|None, "previous_id": str|None,
+         "is_new": bool, "api_id": str|None, "auto_restored": bool}
     """
     from bili_api import BiliAPI
 
     uid = uid or UP_UID
     cookie_file = COOKIE_FILE
 
-    result = {"changed": False, "current_id": None, "previous_id": None, "is_new": False, "api_id": None}
+    result = {"changed": False, "current_id": None, "previous_id": None, "is_new": False, "api_id": None, "auto_restored": False}
 
     if not cookie_file.exists():
         logger.warning("置顶监测: Cookie 文件不存在，跳过")
@@ -76,9 +77,14 @@ async def check_pinned_dynamic(uid: str = None) -> dict:
     result["current_id"] = monitored_id or api_pinned_id
     result["previous_id"] = monitored_id
 
-    # 手动模式：API照查，但不自动切换，只上报差异
+    # 手动模式：API照查，但不自动切换（除非检测到手动设定已与B站一致）
     if state.get("mode") == "manual":
-        if api_pinned_id and api_pinned_id != monitored_id:
+        if api_pinned_id and monitored_id and api_pinned_id == monitored_id:
+            # 手动设定的ID与B站API实际置顶一致 → 用户操作已生效，自动切回自动模式
+            set_mode_auto()
+            result["auto_restored"] = True
+            logger.info(f"置顶监测: 手动模式，B站置顶与手动设定一致({api_pinned_id})，自动切回自动模式")
+        elif api_pinned_id and api_pinned_id != monitored_id:
             logger.info(f"置顶监测: 手动模式，B站置顶={api_pinned_id}，监控中={monitored_id}，不自动切换")
         else:
             logger.info(f"置顶监测: 手动模式，B站置顶={api_pinned_id} (一致)")
