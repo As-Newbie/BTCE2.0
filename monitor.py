@@ -336,7 +336,14 @@ class Monitor:
                 msg = self.comment_renderer.generate_new_dynamic_qq_message(
                     up_name, dyn['dynamic_id'], f"https://t.bilibili.com/{dyn['dynamic_id']}",
                     current_time, dyn.get("content", ""), dyn.get("screenshot_path", ""))
-                await send_qq_message(msg)
+                # 传 message_data:原始消息失败后自动补发纯文本降级消息(图片超时消息不丢失)
+                await send_qq_message(msg, {
+                    "up_name": up_name,
+                    "dynamic_id": dyn['dynamic_id'],
+                    "current_html": dyn.get("content", ""),
+                    "current_time": current_time,
+                    "current_images": dyn.get("images", []),
+                })
             else:
                 # 多条极少出现，简单拼装
                 lines = [f"【{up_name}】发布了 {len(new_dynamics)} 条新动态~"]

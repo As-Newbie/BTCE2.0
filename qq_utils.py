@@ -6,6 +6,10 @@ from logger_config import logger
 from config_qq import QQ_BOT_API_URL, QQ_BOT_ACCESS_TOKEN, QQ_GROUP_IDS, QQ_PUSH_ENABLED, MAX_MESSAGE_LENGTH
 from qq_message_generator import qq_message_generator
 
+# 降级消息延迟发送时间(秒):NapCat 的 sendMsg IPC 超时约 10 秒,
+# 原始消息失败后等这个窗口过去再补发降级消息,避免在 QQ 客户端卡顿期连续撞墙
+DEGRADED_RETRY_DELAY_SECONDS = 10
+
 
 class QQMessageSender:
     """QQ群消息发送器"""
@@ -28,8 +32,9 @@ class QQMessageSender:
         if len(message) > MAX_MESSAGE_LENGTH:
             message = message[:MAX_MESSAGE_LENGTH - 3] + "..."
 
-        # 重试机制
-        max_retries = 3 if not is_degraded else 1
+        # 重试机制:原始消息只发 1 次,失败后由 send_with_degradation 补发降级消息
+        # (共 2 次尝试,第 2 次为降级消息,避免同一内容重复推送两条)
+        max_retries = 1
         message_type = "降级消息" if is_degraded else "普通消息"
 
         for attempt in range(max_retries):
@@ -101,6 +106,9 @@ class QQMessageSender:
             return original_results
 
         logger.warning(f"⚠️ 检测到 {len(failed_groups)} 个群消息发送失败，启用降级机制")
+
+        # 等待 NapCat sendMsg 超时窗口(约10s)过去再发降级消息,避免在 QQ 客户端卡顿期连续撞墙
+        await asyncio.sleep(DEGRADED_RETRY_DELAY_SECONDS)
 
         # 生成降级消息
         degraded_message = qq_message_generator.generate_degraded_message(

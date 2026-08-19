@@ -47,6 +47,20 @@ BTCE 各版本详细变更记录。简表见 [README.md](README.md#版本演进)
 ### Claude (AI Assistant) 的贡献
 - **编码实现**：`pinned_dynamic_monitor.py` 手动模式自动恢复逻辑；`monitor.py` 邮件通知+`api_pinned_id` 同步修复；本地双向测试验证；服务器部署
 
+### v4.14 补丁 — QQ消息发送重试降级修复 (2026-08-19)
+
+- **事故背景**：8-19 晚动态推送三群并发带图消息，NapCat 的 sendMsg IPC 超时（约10s），动态消息丢失，群友未收到
+- **根因**：服务器 `qq_utils.py` 为旧版（`max_retries` 恒为1，无重试）；动态推送路径（`monitor.py`）未传 `message_data`，无降级兜底
+- **重试策略调整**：`qq_utils.py` 原始消息只发 1 次，失败后不重发相同内容；失败群等待 10s（NapCat sendMsg 超时窗口）后补发纯文本降级消息——共 2 次尝试且第 2 次必为降级消息，避免重复推送两条相同消息
+- **动态推送接降级**：`monitor.py` 新动态批量推送补传 `message_data`，图片超时时降级兜底，消息不丢失
+- **新增常量**：`qq_utils.py` 模块常量 `DEGRADED_RETRY_DELAY_SECONDS = 10`，降级消息延迟发送窗口
+
+### XTong 的贡献
+- **需求与设计**：定位 NapCat sendMsg 超时问题，设计「重试那次必须是降级消息、不能两条一样」策略，明确测试只发测试群
+
+### Claude (AI Assistant) 的贡献
+- **编码实现**：`qq_utils.py` 重试策略调整+降级延迟常量；`monitor.py` 动态推送补传 `message_data`；服务器日志排查（定位旧版无重试根因）；部署与验证
+
 ## v4.13 — 动态类型过滤，排除直播自动动态 (2026-07)
 
 - **动态类型过滤**：新增 `DYNAMIC_SKIP_TYPES` 配置项，可排除 B站 自动生成的动态类型
