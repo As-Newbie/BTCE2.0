@@ -343,6 +343,7 @@ class Monitor:
                     "current_html": dyn.get("content", ""),
                     "current_time": current_time,
                     "current_images": dyn.get("images", []),
+                    "degraded_type": "new_dynamic",
                 })
             else:
                 # 多条极少出现，简单拼装

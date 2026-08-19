@@ -110,15 +110,22 @@ class QQMessageSender:
         # 等待 NapCat sendMsg 超时窗口(约10s)过去再发降级消息,避免在 QQ 客户端卡顿期连续撞墙
         await asyncio.sleep(DEGRADED_RETRY_DELAY_SECONDS)
 
-        # 生成降级消息
-        degraded_message = qq_message_generator.generate_degraded_message(
-            up_name=message_data.get("up_name", ""),
-            dynamic_id=message_data.get("dynamic_id", ""),
-            current_html=message_data.get("current_html", ""),
-            current_time=message_data.get("current_time", ""),
-            current_images=message_data.get("current_images", []),
-            original_failed=True
-        )
+        # 生成降级消息:动态推送走独立降级文案(不含正文,提示自行查看);置顶评论走 HTML 文本提取
+        if message_data.get("degraded_type") == "new_dynamic":
+            degraded_message = qq_message_generator.generate_new_dynamic_degraded_message(
+                up_name=message_data.get("up_name", ""),
+                dynamic_id=message_data.get("dynamic_id", ""),
+                current_time=message_data.get("current_time", ""),
+            )
+        else:
+            degraded_message = qq_message_generator.generate_degraded_message(
+                up_name=message_data.get("up_name", ""),
+                dynamic_id=message_data.get("dynamic_id", ""),
+                current_html=message_data.get("current_html", ""),
+                current_time=message_data.get("current_time", ""),
+                current_images=message_data.get("current_images", []),
+                original_failed=True
+            )
 
         degraded_results = []
         for group_id in failed_groups:

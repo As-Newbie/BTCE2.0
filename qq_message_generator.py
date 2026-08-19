@@ -96,6 +96,16 @@ class QQMessageGenerator:
             # 最终的备用消息
             return f"【{up_name}】动态更新通知\n动态ID: {dynamic_id}\n时间: {current_time}\n⚠️ 包含图片，请查看原动态"
 
+    def generate_new_dynamic_degraded_message(self, up_name: str, dynamic_id: str, current_time: str) -> str:
+        """生成新动态推送的降级消息(纯文本,不含动态正文,提示自行查看动态)"""
+        parts = [f"【{up_name}】发布了新动态~"]
+        parts.append("⚠️ 消息推送超时，已启用降级模式，请点击链接自行查看动态")
+        parts.append("----------------")
+        parts.append(f"{QQ_SINGLE_LINK_LABEL} https://t.bilibili.com/{dynamic_id}")
+        parts.append(f"{QQ_SINGLE_TIME_LABEL} {current_time}")
+        parts.append("----------------")
+        return '\n'.join(parts)
+
     def generate_new_dynamic_qq_message(self, up_name: str, dynamic_id: str, dynamic_url: str,
                                         current_time: str, content_text: str = "",
                                         screenshot_path: str = None) -> str:
