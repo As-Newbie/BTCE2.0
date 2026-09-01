@@ -251,9 +251,16 @@ class Monitor:
                 await asyncio.sleep(0.3)
                 ts = time.strftime("%Y%m%d%H%M%S")
                 path = str(Path(self.mail_save_dir) / f"dynamic_{dynamic_id}_{ts}.png")
-                await dyn_page.screenshot(path=path, full_page=True)
-                logger.info(f"📸 截图: {path}")
-                return path
+                # 与普通动态通知一致：只截动态卡片本身，不用full_page整页截图（避免截到评论区）
+                card = dyn_page.locator('.bili-dyn-item, [class*="dyn-card"]').first
+                if await card.count() > 0:
+                    await card.scroll_into_view_if_needed()
+                    await asyncio.sleep(0.3)
+                    await card.screenshot(path=path)
+                    logger.info(f"📸 截图: {path}")
+                    return path
+                logger.warning(f"⚠️ 未找到动态卡片元素，截图跳过: {dynamic_id}")
+                return None
             finally:
                 await shot_ctx.close()
         except Exception as e:
